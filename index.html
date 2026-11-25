@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#5b8c3e" />
+  <title>Goat Yoga</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐐</text></svg>" />
+  <style>
+    :root {
+      --ink: #2a2118;
+      --ink-soft: #5a4a3a;
+      --cream: #fbf6e8;
+      --paper: #f3ead2;
+      --sage: #4f7d4a;
+      --sage-dk: #3a5e36;
+      --grass-1: #8fbc5a;
+      --grass-2: #7eae4d;
+      --grass-edge: #5f8a38;
+      --terracotta: #c46b3a;
+      --gold: #e0aa3e;
+      --mat: #c9a8dc;
+      --mat-stripe: #b48fd0;
+      --hay: #d4b56a;
+      --wood: #8b5a2b;
+      --gong: #c9a227;
+      --danger: #c44b3a;
+      --ok: #2e7d4f;
+      --shadow: rgba(42, 33, 24, 0.18);
+      --cell: min(14.2vw, 56px);
+      --header-h: 72px;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      overflow: hidden;
+      overscroll-behavior: none;
+      background: #6e9b45;
+      color: var(--ink);
+      font-family: ui-rounded, "SF Pro Rounded", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+      user-select: none;
+    }
+    body.barn { --grass-1: #c4a36a; --grass-2: #b89555; --grass-edge: #8a6a38; background: #9a7844; }
+    body.mountain { --grass-1: #8aa7a0; --grass-2: #7a9891; --grass-edge: #4e6f68; background: #6a8a92; }
+    #app {
+      height: 100dvh;
+      height: 100svh;
+      display: flex;
+      flex-direction: column;
+      padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+      max-width: 480px;
+      margin: 0 auto;
+      position: relative;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 8px 12px 6px;
+      background: linear-gradient(180deg, rgba(251,246,232,0.96), rgba(251,246,232,0.88));
+      border-bottom: 2px solid rgba(42,33,24,0.12);
+      flex-shrink: 0;
+    }
+    .brand h1 {
+      margin: 0;
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+    .brand h1 span { font-weight: 400; }
+    #loc-name {
+      font-size: 0.72rem;
+      color: var(--ink-soft);
+      margin-top: 2px;
+    }
+    .stats { text-align: right; line-height: 1.2; }
+    #zen-line {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--sage-dk);
+    }
+    #zen-line .unit { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+    .substats { font-size: 0.75rem; color: var(--ink-soft); display: flex; gap: 10px; justify-content: flex-end; margin-top: 2px; }
+    #eff { font-weight: 700; }
+    #eff.low { color: var(--danger); }
+    #eff.mid { color: #b47818; }
+    #eff.high { color: var(--ok); }
+    #hint {
+      min-height: 22px;
+      padding: 3px 12px;
+      font-size: 0.75rem;
+      color: var(--cream);
+      background: rgba(42,33,24,0.28);
+      text-align: center;
+      flex-shrink: 0;
+    }
+    #board-wrap {
+      position: relative;
+      flex: 1 1 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 10px 4px;
+      min-height: 0;
+    }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(6, var(--cell));
+      grid-template-rows: repeat(8, var(--cell));
+      gap: 2px;
+      padding: 6px;
+      background: var(--grass-edge);
+      border-radius: 12px;
+      box-shadow: 0 8px 20px var(--shadow), inset 0 0 0 2px rgba(255,255,255,0.15);
+      position: relative;
+    }
+    .cell {
+      position: relative;
+      width: var(--cell);
+      height: var(--cell);
+      background: var(--grass-1);
+      border-radius: 6px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .cell:nth-child(even) { background: var(--grass-2); }
+    .cell.row-odd:nth-child(even) { background: var(--grass-1); }
+    .cell.row-odd:nth-child(odd) { background: var(--grass-2); }
+    .cell.hl { outline: 2px solid #fff4c4; outline-offset: -2px; z-index: 2; }
+    .cell.hl-rad { background: #a8d46a !important; }
+    .cell.hl-adj { background: #f0d56a !important; }
+    .cell.selected { outline: 3px solid #fff; outline-offset: -3px; z-index: 3; box-shadow: inset 0 0 0 2px var(--terracotta); }
+    .cell.invalid { outline: 3px solid var(--danger); outline-offset: -3px; }
+    .cell .equip { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: calc(var(--cell) * 0.42); pointer-events: none; }
+    .cell .mat {
+      position: absolute; inset: 14% 10%;
+      background: linear-gradient(90deg, var(--mat) 8%, var(--mat-stripe) 8%, var(--mat-stripe) 12%, var(--mat) 12%);
+      border-radius: 3px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    }
+    .cell .hay {
+      position: absolute; inset: 18% 14%;
+      background: repeating-linear-gradient(135deg, #e8c97a, #e8c97a 4px, #c9a85a 4px, #c9a85a 6px);
+      border-radius: 4px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    .cell .hay::after { content: "🌾"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: calc(var(--cell) * 0.4); }
+    .cell .gong-eq {
+      position: absolute; inset: 16%;
+      background: radial-gradient(circle at 40% 35%, #f0d878, #c9a227 55%, #8a6a12);
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.25), inset 0 0 0 3px #a88820;
+    }
+    .cell .gong-eq::after { content: ""; position: absolute; inset: 38%; background: #7a5a10; border-radius: 50%; }
+    .cell .smoothie-eq {
+      position: absolute; inset: 16% 18%;
+      background: #f4f0e6;
+      border-radius: 4px 4px 6px 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      display: flex; align-items: flex-end; justify-content: center;
+      font-size: calc(var(--cell) * 0.4);
+    }
+    .cell .beam-eq {
+      position: absolute; left: 8%; right: 8%; top: 42%; height: 16%;
+      background: linear-gradient(180deg, #d2a36a, #8b5a2b);
+      border-radius: 2px;
+      box-shadow: 0 2px 0 #5a3a18;
+    }
+    .goat {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .goat .body {
+      font-size: calc(var(--cell) * 0.52);
+      line-height: 1;
+      animation: bob 2.4s ease-in-out infinite;
+      filter: drop-shadow(0 1px 1px rgba(0,0,0,0.25));
+    }
+    .goat.mountain .body { font-size: calc(var(--cell) * 0.6); }
+    .goat.pygmy .body { font-size: calc(var(--cell) * 0.46); }
+    .goat.kid .body { transform-origin: 50% 70%; animation: fidget 1.1s ease-in-out infinite; }
+    .goat.posing .body { animation: posePop 0.7s ease; }
+    .goat .pose {
+      font-size: calc(var(--cell) * 0.22);
+      line-height: 1;
+      margin-top: -2px;
+    }
+    .goat .tint {
+      position: absolute; inset: 8%;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .goat.mountain .tint { background: radial-gradient(circle, rgba(90,110,140,0.28), transparent 70%); }
+    .goat.kid .tint { background: radial-gradient(circle, rgba(220,80,40,0.22), transparent 70%); }
+    .goat.pygmy .tint { background: radial-gradient(circle, rgba(240,200,80,0.18), transparent 70%); }
+    .mult-tag {
+      position: absolute; top: 1px; right: 2px;
+      font-size: 9px; font-weight: 700;
+      color: #fff; background: rgba(42,33,24,0.45);
+      border-radius: 4px; padding: 0 3px;
+      line-height: 1.3; z-index: 2;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .cell.show-mult .mult-tag, .cell.selected .mult-tag, #board.show-all .mult-tag { opacity: 1; }
+    #floats {
+      position: absolute; inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 5;
+    }
+    .floater {
+      position: absolute;
+      transform: translate(-50%, 0);
+      font-weight: 700;
+      color: #fff8dc;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.45);
+      font-size: 0.85rem;
+      animation: floatUp 0.9s ease-out forwards;
+      white-space: nowrap;
+    }
+    .floater.burst { color: #ffe27a; font-size: 1.05rem; }
+    @keyframes bob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+    @keyframes fidget {
+      0%, 100% { transform: translateX(0) rotate(-4deg); }
+      50% { transform: translateX(2px) rotate(5deg); }
+    }
+    @keyframes posePop {
+      0% { transform: scale(1); }
+      35% { transform: scale(1.28) rotate(-8deg); }
+      70% { transform: scale(1.12) rotate(4deg); }
+      100% { transform: scale(1); }
+    }
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translate(-50%, 0); }
+      100% { opacity: 0; transform: translate(-50%, -40px); }
+    }
+    #inspector {
+      flex-shrink: 0;
+      min-height: 44px;
+      padding: 6px 12px;
+      background: var(--cream);
+      border-top: 2px solid rgba(42,33,24,0.1);
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    #inspector .info { flex: 1; min-width: 0; }
+    #inspector .info strong { display: block; font-size: 0.85rem; }
+    #inspector .actions { display: flex; gap: 6px; flex-shrink: 0; }
+    button {
+      font: inherit;
+      border: 0;
+      background: var(--sage);
+      color: #fff;
+      border-radius: 8px;
+      padding: 8px 12px;
+      min-height: 40px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:active { transform: scale(0.97); }
+    button.ghost { background: transparent; color: var(--ink); border: 1.5px solid rgba(42,33,24,0.25); }
+    button.warn { background: var(--danger); }
+    button:disabled { opacity: 0.4; cursor: default; transform: none; }
+    #tabs {
+      display: flex;
+      background: var(--paper);
+      flex-shrink: 0;
+      border-top: 1px solid rgba(42,33,24,0.08);
+    }
+    #tabs button {
+      flex: 1;
+      background: transparent;
+      color: var(--ink-soft);
+      border-radius: 0;
+      min-height: 40px;
+      padding: 8px 4px;
+      border-bottom: 3px solid transparent;
+    }
+    #tabs button.on { color: var(--ink); border-bottom-color: var(--terracotta); background: var(--cream); }
+    #panels {
+      flex: 0 0 auto;
+      height: 196px;
+      background: var(--cream);
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .panel { display: none; padding: 8px 10px 12px; }
+    .panel.on { display: block; }
+    .shop-item, .upg-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      border-radius: 10px;
+      background: #fff;
+      margin-bottom: 6px;
+      box-shadow: 0 1px 2px var(--shadow);
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+      color: var(--ink);
+      min-height: 56px;
+    }
+    .shop-item.selected { box-shadow: 0 0 0 2px var(--terracotta); }
+    .shop-item.locked, .upg-item.locked { opacity: 0.55; cursor: default; }
+    .shop-item .ico, .upg-item .ico {
+      width: 40px; height: 40px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+      background: var(--paper);
+      border-radius: 8px;
+    }
+    .shop-item .meta, .upg-item .meta { flex: 1; min-width: 0; }
+    .shop-item .meta b, .upg-item .meta b { display: block; font-size: 0.88rem; }
+    .shop-item .meta span, .upg-item .meta span { display: block; font-size: 0.7rem; color: var(--ink-soft); line-height: 1.3; }
+    .price {
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--sage-dk);
+      white-space: nowrap;
+    }
+    .price.na { color: var(--danger); }
+    .retreat-card { background: #fff; border-radius: 10px; padding: 12px; margin-bottom: 8px; box-shadow: 0 1px 2px var(--shadow); }
+    .retreat-card h3 { margin: 0 0 4px; font-size: 0.95rem; }
+    .retreat-card p { margin: 0 0 10px; font-size: 0.8rem; color: var(--ink-soft); }
+    .row-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+    .row-btns button { flex: 1; min-width: 120px; }
+    #modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(42,33,24,0.55);
+      display: none;
+      align-items: center; justify-content: center;
+      z-index: 20;
+      padding: 20px;
+    }
+    #modal-backdrop.show { display: flex; }
+    #modal {
+      background: var(--cream);
+      border-radius: 16px;
+      padding: 20px 18px 16px;
+      max-width: 360px;
+      width: 100%;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    }
+    #modal h2 { margin: 0 0 8px; font-size: 1.25rem; }
+    #modal p, #modal li { font-size: 0.88rem; color: var(--ink-soft); line-height: 1.4; }
+    #modal ol { padding-left: 1.2rem; margin: 8px 0 16px; }
+    #modal .row-btns { margin-top: 8px; }
+    .mute-dot { font-size: 0.75rem; color: var(--ink-soft); }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div class="brand">
+        <h1>🐐 <span>Goat Yoga</span></h1>
+        <div id="loc-name">Backyard Retreat</div>
+      </div>
+      <div class="stats">
+        <div id="zen-line"><span id="zen">0</span> <span class="unit">zen</span></div>
+        <div class="substats">
+          <span><span id="rate">0</span>/s</span>
+          <span>Eff <span id="eff">—</span></span>
+        </div>
+      </div>
+    </header>
+    <div id="hint">The goats do the yoga. You arrange the retreat.</div>
+    <div id="board-wrap">
+      <div id="board" aria-label="Yoga retreat grid"></div>
+      <div id="floats"></div>
+    </div>
+    <div id="inspector">
+      <div class="info" id="insp-info">Tap a tile, or pick something from the shop to place.</div>
+      <div class="actions" id="insp-actions"></div>
+    </div>
+    <nav id="tabs">
+      <button type="button" data-tab="shop" class="on">Shop</button>
+      <button type="button" data-tab="upgrades">Upgrades</button>
+      <button type="button" data-tab="retreat">Retreat</button>
+    </nav>
+    <div id="panels">
+      <div id="panel-shop" class="panel on"></div>
+      <div id="panel-upgrades" class="panel"></div>
+      <div id="panel-retreat" class="panel"></div>
+    </div>
+  </div>
+  <div id="modal-backdrop">
+    <div id="modal"></div>
+  </div>
+  <script>
+  (() => {
+    "use strict";
+
+    const COLS = 6, ROWS = 8;
+    const SAVE_KEY = "goat-yoga-save-v1";
+    const DIRS4 = [[1,0],[-1,0],[0,1],[0,-1]];
+    const IDLE_POSES = { pygmy: "🧘", mountain: "🧘", kid: "🤭" };
+    const BURST_POSES = { pygmy: "🙃", mountain: "🤸", kid: "💥" };
+
+    const ITEMS = {
+      pygmy:    { kind:"goat", name:"Pygmy Goat",   emoji:"🐐", short:"Pygmy",
+                  desc:"Calm little headstander. Loves a partner pose.",
+                  base:1, calm:true, cost:10, growth:1.32, unlock:0 },
+      mountain: { kind:"goat", name:"Mountain Goat", emoji:"🐐", short:"Mountain",
+                  desc:"Sure-footed. Gets extra zen from a balance beam.",
+                  base:2.5, calm:true, cost:75, growth:1.38, unlock:100 },
+      kid:      { kind:"goat", name:"Rowdy Kid",    emoji:"🐐", short:"Kid",
+                  desc:"Cheap energy. Distracts whoever stands next door.",
+                  base:1.4, calm:false, cost:28, growth:1.3, unlock:40 },
+      mat:      { kind:"equip", name:"Yoga Mat",     emoji:"🧘",
+                  desc:"A goat on a mat produces 2× zen (upgradable).",
+                  cost:15, growth:1.38, unlock:0 },
+      hay:      { kind:"equip", name:"Hay Bale",     emoji:"🌾",
+                  desc:"+50% zen to goats in the 4 adjacent tiles.",
+                  cost:40, growth:1.42, unlock:20 },
+      beam:     { kind:"equip", name:"Balance Beam", emoji:"🪵",
+                  desc:"+30% to adjacent goats, +60% for mountain goats.",
+                  cost:90, growth:1.42, unlock:80 },
+      gong:     { kind:"equip", name:"Gong",         emoji:"🔔",
+                  desc:"+25% zen to every goat within 2 tiles.",
+                  cost:160, growth:1.5, unlock:200 },
+      smoothie: { kind:"equip", name:"Smoothie Bar", emoji:"🥤",
+                  desc:"+40% happiness zen to adjacent goats.",
+                  cost:280, growth:1.5, unlock:400 },
+    };
+    const SHOP_ORDER = ["pygmy","mat","hay","kid","beam","mountain","gong","smoothie"];
+
+    const UPGRADES = {
+      mats: {
+        name:"Premium Mats", desc:"Thicker mats, deeper stretches.",
+        costs:[100, 400, 1500], labels:["2.5× mats","3× mats","3.5× mats"],
+      },
+      om: {
+        name:"Group Om", desc:"Everyone hums a little louder.",
+        costs:[200, 800, 3200], labels:["×1.25 global","×1.6 global","×2.2 global"],
+      },
+      joints: {
+        name:"Flexible Joints", desc:"Harder poses on tap grant more zen.",
+        costs:[75, 300, 1200], labels:["6s burst","9s burst","13s burst"],
+      },
+      meditation: {
+        name:"Deep Meditation", desc:"Longer offline earnings cap.",
+        costs:[150, 600], labels:["4 hour cap","8 hour cap"],
+      },
+    };
+
+    const LOCATIONS = [
+      { id:"backyard", name:"Backyard Retreat", flavor:"A scruffy yard. The goats are ready.", nextAt:8000 },
+      { id:"barn",     name:"The Barn",          flavor:"Hayloft light and a bigger omen.", nextAt:80000 },
+      { id:"mountain", name:"Mountaintop Studio", flavor:"Thin air, tall poses.", nextAt:Infinity },
+    ];
+
+    const EMPTY = () => ({ goat:null, equip:null });
+
+    function blankGrid() {
+      return Array.from({ length: ROWS }, () => Array.from({ length: COLS }, EMPTY));
+    }
+
+    function freshState() {
+      const grid = blankGrid();
+      grid[3][2].goat = { type: "pygmy", id: 1, poseUntil: 0, burstPose: BURST_POSES.pygmy };
+      return {
+        zen: 15,
+        totalEarned: 0,
+        grid,
+        bought: { pygmy:1, mountain:0, kid:0, mat:0, hay:0, beam:0, gong:0, smoothie:0 },
+        upg: { mats:0, om:0, joints:0, meditation:0 },
+        loc: 0,
+        prestigeMult: 1,
+        muted: false,
+        nextId: 2,
+        lastSave: Date.now(),
+        seenHelp: false,
+      };
+    }
+
+    function makeGoat(type, id) {
+      const gid = id != null ? id : state.nextId++;
+      return { type, id: gid, poseUntil: 0, burstPose: BURST_POSES[type] };
+    }
+
+    let state = freshState();
+    let selected = null; // {r,c} or null
+    let holding = null;  // { source:"shop"|"board", type, kind, goat?, paid?:false, from?:{r,c,role} }
+    let currentTab = "shop";
+    let lastTick = performance.now();
+    let lastFloat = 0;
+    let hiddenAt = 0;
+    let hoverCell = null;
+    let audioCtx = null;
+    let raf = 0;
+
+    const $ = (id) => document.getElementById(id);
+    const boardEl = () => $("board");
+
+    function inBounds(r,c) { return r>=0 && c>=0 && r<ROWS && c<COLS; }
+
+    function matMult() { return [2, 2.5, 3, 3.5][state.upg.mats] || 2; }
+    function globalMult() { return [1, 1.25, 1.6, 2.2][state.upg.om] || 1; }
+    function burstSecs() { return [4, 6, 9, 13][state.upg.joints] || 4; }
+    function offlineHours() { return [2, 4, 8][state.upg.meditation] || 2; }
+
+    function itemCost(type) {
+      const it = ITEMS[type];
+      return Math.ceil(it.cost * Math.pow(it.growth, state.bought[type] || 0));
+    }
+
+    function unlocked(type) {
+      return state.totalEarned + state.zen >= ITEMS[type].unlock;
+    }
+
+    function cellAt(grid, r, c) { return grid[r][c]; }
+
+    function neighbors4(r, c) {
+      const out = [];
+      for (const [dr,dc] of DIRS4) {
+        const rr=r+dr, cc=c+dc;
+        if (inBounds(rr,cc)) out.push([rr,cc]);
+      }
+      return out;
+    }
+
+    function chebyshev(r1,c1,r2,c2) { return Math.max(Math.abs(r1-r2), Math.abs(c1-c2)); }
+
+    // Returns a breakdown of one goat tile. Pure. grid may be state.grid.
+    function tileBreakdown(grid, r, c, opts) {
+      const upg = (opts && opts.upg) || state.upg;
+      const pmult = (opts && opts.prestigeMult != null) ? opts.prestigeMult : state.prestigeMult;
+      const cell = grid[r][c];
+      if (!cell || !cell.goat) return null;
+      const def = ITEMS[cell.goat.type];
+      const onMat = !!(cell.equip && cell.equip.type === "mat");
+      const mMult = onMat ? ([2, 2.5, 3, 3.5][upg.mats] || 2) : 1;
+      const gMult = [1, 1.25, 1.6, 2.2][upg.om] || 1;
+
+      let hay=0, smoothie=0, beam=0, partner=0, kids=0, gong=0;
+      let hayN=0, smoothieN=0, beamN=0, partnerN=0, kidN=0, gongN=0;
+
+      for (const [rr,cc] of neighbors4(r,c)) {
+        const n = grid[rr][cc];
+        if (!n) continue;
+        if (n.equip) {
+          if (n.equip.type === "hay") { hay += 0.5; hayN++; }
+          if (n.equip.type === "smoothie") { smoothie += 0.4; smoothieN++; }
+          if (n.equip.type === "beam") {
+            const add = def.base && cell.goat.type === "mountain" ? 0.6 : 0.3;
+            beam += add; beamN++;
+          }
+        }
+        if (n.goat) {
+          if (def.calm && ITEMS[n.goat.type].calm) { partner += 0.2; partnerN++; }
+          if (n.goat.type === "kid") { kids += 0.2; kidN++; }
+        }
+      }
+      if (partner > 0.4) partner = 0.4; // cap two partners
+
+      for (let rr=0; rr<ROWS; rr++) {
+        for (let cc=0; cc<COLS; cc++) {
+          const e = grid[rr][cc].equip;
+          if (e && e.type === "gong" && chebyshev(r,c,rr,cc) <= 2 && !(rr===r && cc===c)) {
+            gong += 0.25; gongN++;
+          }
+        }
+      }
+
+      const areaRaw = 1 + hay + smoothie + beam + partner + gong - kids;
+      const area = Math.max(0.25, areaRaw);
+      const rate = def.base * mMult * area * gMult * pmult;
+      return {
+        base: def.base, onMat, mMult, hay, hayN, smoothie, smoothieN, beam, beamN,
+        partner, partnerN, gong, gongN, kids, kidN, area, gMult, pmult, rate,
+        type: cell.goat.type, calm: def.calm,
+      };
+    }
+
+    function totalOutput(grid, opts) {
+      grid = grid || state.grid;
+      let sum = 0;
+      for (let r=0; r<ROWS; r++) for (let c=0; c<COLS; c++) {
+        const b = tileBreakdown(grid, r, c, opts);
+        if (b) sum += b.rate;
+      }
+      return sum;
+    }
+
+    function countOnGrid(grid, pred) {
+      let n = 0;
+      for (let r=0; r<ROWS; r++) for (let c=0; c<COLS; c++) if (pred(grid[r][c])) n++;
+      return n;
+    }
+
+    // Rough best-possible output with the current inventory (placed + held).
+    function idealOutput(grid, opts) {
+      grid = grid || state.grid;
+      const upg = (opts && opts.upg) || state.upg;
+      const pmult = (opts && opts.prestigeMult != null) ? opts.prestigeMult : state.prestigeMult;
+      const gMult = [1, 1.25, 1.6, 2.2][upg.om] || 1;
+      const mMult = [2, 2.5, 3, 3.5][upg.mats] || 2;
+
+      const goats = [];
+      let mats=0, hay=0, beam=0, gong=0, smoothie=0;
+      for (let r=0; r<ROWS; r++) for (let c=0; c<COLS; c++) {
+        const cell = grid[r][c];
+        if (cell.goat) goats.push(cell.goat.type);
+        if (cell.equip) {
+          if (cell.equip.type==="mat") mats++;
+          if (cell.equip.type==="hay") hay++;
+          if (cell.equip.type==="beam") beam++;
+          if (cell.equip.type==="gong") gong++;
+          if (cell.equip.type==="smoothie") smoothie++;
+        }
+      }
+      if (holding) {
+        if (holding.kind === "goat" && holding.goat) goats.push(holding.goat.type);
+        else if (holding.kind === "goat" && holding.type) goats.push(holding.type);
+        if (holding.kind === "equip" && holding.type) {
+          if (holding.type==="mat") mats++;
+          if (holding.type==="hay") hay++;
+          if (holding.type==="beam") beam++;
+          if (holding.type==="gong") gong++;
+          if (holding.type==="smoothie") smoothie++;
+        }
+      }
+      if (!goats.length) return 0;
+      goats.sort((a,b) => ITEMS[b].base - ITEMS[a].base);
+
+      const goatN = goats.length;
+      const calm = goats.filter(t => ITEMS[t].calm).length;
+      const mountains = goats.filter(t => t==="mountain").length;
+      let bonusPool = hay*4*0.5 + smoothie*4*0.4 + beam*4*0.3 + gong*Math.min(goatN, 24)*0.25;
+      bonusPool += 0.2 * 2 * Math.min(Math.floor(calm/2)*2, calm); // partner pairs
+      bonusPool += 0.3 * Math.min(mountains, beam*4); // extra mountain-on-beam
+      const cap = (hay? 0.5*4 : 0) + (smoothie? 0.4*4 : 0) + (beam? 0.6*4 : 0) + gong*0.25 + 0.4;
+      const fair = bonusPool / goatN;
+
+      let total = 0;
+      goats.forEach((t, i) => {
+        const mat = i < mats ? mMult : 1;
+        const area = 1 + Math.min(cap, fair);
+        total += ITEMS[t].base * mat * area;
+      });
+      return total * gMult * pmult;
+    }
+
+    function efficiency() {
+      const cur = totalOutput();
+      const ideal = idealOutput();
+      if (ideal <= 0 || cur <= 0) return null;
+      return (cur / ideal) * 100;
+    }
+
+    function canPlace(type, kind, r, c, grid, ignoreFrom) {
+      grid = grid || state.grid;
+      if (!inBounds(r,c)) return false;
+      const cell = grid[r][c];
+      const skipGoat = ignoreFrom && ignoreFrom.role==="goat" && ignoreFrom.r===r && ignoreFrom.c===c;
+      const skipEquip = ignoreFrom && ignoreFrom.role==="equip" && ignoreFrom.r===r && ignoreFrom.c===c;
+      const goat = skipGoat ? null : cell.goat;
+      const equip = skipEquip ? null : cell.equip;
+      if (kind === "goat") {
+        if (goat) return false;
+        if (equip && equip.type !== "mat") return false;
+        return true;
+      }
+      if (type === "mat") {
+        if (equip) return false;
+        return true;
+      }
+      // other equipment needs a fully empty tile
+      if (goat || equip) return false;
+      return true;
+    }
+
+    function placeHeldAt(r, c) {
+      if (!holding) return false;
+      const from = holding.from;
+      if (!canPlace(holding.type, holding.kind, r, c, state.grid, from)) return false;
+      const cell = state.grid[r][c];
+      if (holding.source === "shop") {
+        const cost = itemCost(holding.type);
+        if (state.zen < cost) return false;
+        spend(cost);
+        state.bought[holding.type] = (state.bought[holding.type] || 0) + 1;
+        if (holding.kind === "goat") cell.goat = makeGoat(holding.type);
+        else cell.equip = { type: holding.type };
+        blip(520, 0.08, "triangle", 0.05);
+        blip(740, 0.1, "sine", 0.04);
+      } else {
+        // move from board or after pickup
+        if (holding.kind === "goat") cell.goat = holding.goat;
+        else cell.equip = { type: holding.type };
+        blip(440, 0.06, "sine", 0.04);
+      }
+      holding = null;
+      selected = { r, c };
+      hintForBoard();
+      renderAll();
+      save();
+      return true;
+    }
+
+    function pickup(r, c, role) {
+      const cell = state.grid[r][c];
+      if (role === "goat" && cell.goat) {
+        holding = { source:"board", kind:"goat", type: cell.goat.type, goat: cell.goat, from:{r,c,role:"goat"} };
+        cell.goat = null;
+        selected = null;
+        renderAll();
+        setHint("Carrying a " + ITEMS[holding.type].name + ". Tap a tile to set them down.");
+        return true;
+      }
+      if (role === "equip" && cell.equip) {
+        holding = { source:"board", kind:"equip", type: cell.equip.type, from:{r,c,role:"equip"} };
+        cell.equip = null;
+        selected = null;
+        renderAll();
+        setHint("Carrying a " + ITEMS[holding.type].name + ". Tap a tile to place it.");
+        return true;
+      }
+      return false;
+    }
+
+    function cancelHolding() {
+      if (!holding) return;
+      if (holding.source === "board" && holding.from) {
+        const { r, c, role } = holding.from;
+        // If origin is blocked somehow, find any valid tile
+        if (role === "goat") {
+          if (canPlace(holding.type, "goat", r, c, state.grid)) state.grid[r][c].goat = holding.goat;
+          else {
+            const spot = findValid(holding.type, "goat");
+            if (spot) state.grid[spot.r][spot.c].goat = holding.goat;
+          }
+        } else {
+          if (canPlace(holding.type, "equip", r, c, state.grid)) state.grid[r][c].equip = { type: holding.type };
+          else {
+            const spot = findValid(holding.type, "equip");
+            if (spot) state.grid[spot.r][spot.c].equip = { type: holding.type };
+          }
+        }
+      }
+      holding = null;
+      renderAll();
+      hintForBoard();
+    }
+
+    function findValid(type, kind) {
+      for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
+        if (canPlace(type, kind, r, c)) return {r,c};
+      }
+      return null;
+    }
+
+    function spend(amount) {
+      state.zen = Math.max(0, state.zen - amount);
+    }
+
+    function earn(amount, origin, burst) {
+      if (amount <= 0) return;
+      state.zen += amount;
+      state.totalEarned += amount;
+      if (origin) spawnFloat(origin.r, origin.c, amount, burst);
+    }
+
+    function fmt(n) {
+      if (!isFinite(n)) return "0";
+      const sign = n < 0 ? "-" : "";
+      n = Math.abs(n);
+      if (n < 1000) {
+        if (n < 10 && n % 1 !== 0) return sign + n.toFixed(1);
+        if (n < 100 && n % 1 !== 0) return sign + (Math.round(n*10)/10).toString();
+        return sign + Math.floor(n).toString();
+      }
+      const units = ["K","M","B","T"];
+      let u = -1;
+      while (n >= 1000 && u < units.length-1) { n /= 1000; u++; }
+      const d = n >= 100 ? 0 : n >= 10 ? 1 : 2;
+      return sign + n.toFixed(d) + units[u];
+    }
+
+    function setHint(text) { $("hint").textContent = text; }
+
+    function hintForBoard() {
+      if (holding) {
+        const costBit = holding.source === "shop" ? " — " + fmt(itemCost(holding.type)) + " zen" : "";
+        setHint("Placing " + ITEMS[holding.type].name + costBit + ". Tap a tile, or cancel.");
+        return;
+      }
+      const rate = totalOutput();
+      if (state.bought.mat === 0) setHint("Buy a yoga mat and place it under your goat for 2× zen.");
+      else if (rate > 0) setHint("Tap a goat to hold a harder pose. Rearrange anytime — sloppy still works.");
+      else setHint("The goats do the yoga. You arrange the retreat.");
+    }
+
+    function spawnFloat(r, c, amount, burst) {
+      const board = boardEl();
+      const layer = $("floats");
+      const cell = board.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+      if (!cell) return;
+      const br = board.getBoundingClientRect();
+      const cr = cell.getBoundingClientRect();
+      const el = document.createElement("div");
+      el.className = "floater" + (burst ? " burst" : "");
+      el.textContent = "+" + fmt(amount);
+      el.style.left = (cr.left - br.left + cr.width/2) + "px";
+      el.style.top = (cr.top - br.top + cr.height*0.15) + "px";
+      layer.appendChild(el);
+      setTimeout(() => el.remove(), 950);
+    }
+
+    function ensureAudio() {
+      if (state.muted) return;
+      if (!audioCtx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        audioCtx = new AC();
+      }
+      if (audioCtx.state === "suspended") audioCtx.resume();
+    }
+
+    function blip(freq, dur, type, gain) {
+      if (state.muted) return;
+      try {
+        ensureAudio();
+        if (!audioCtx) return;
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = type || "sine";
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(gain || 0.04, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+        o.connect(g).connect(audioCtx.destination);
+        o.start();
+        o.stop(audioCtx.currentTime + dur);
+      } catch (e) { /* ignore audio errors */ }
+    }
+
+    function onCellPointer(r, c) {
+      if (holding) {
+        const ok = placeHeldAt(r, c);
+        if (!ok) {
+          flashInvalid(r, c);
+          setHint("Can't place that there. Mats can share a tile with a goat; everything else needs its own space.");
+          blip(180, 0.1, "square", 0.03);
+        }
+        return;
+      }
+      const cell = state.grid[r][c];
+      // Tap a goat for a burst if already selected or if tapping the goat
+      if (cell.goat && selected && selected.r===r && selected.c===c) {
+        tryBurst(r, c);
+        return;
+      }
+      if (cell.goat) {
+        selected = { r, c };
+        tryBurst(r, c);
+        renderAll();
+        return;
+      }
+      selected = (cell.equip || cell.goat) ? { r, c } : { r, c };
+      renderAll();
+    }
+
+    function tryBurst(r, c) {
+      const cell = state.grid[r][c];
+      if (!cell || !cell.goat) return;
+      const now = Date.now();
+      if (cell.goat.poseUntil && now < cell.goat.poseUntil - 200) return; // short cooldown
+      const b = tileBreakdown(state.grid, r, c);
+      if (!b) return;
+      const amt = b.rate * burstSecs();
+      cell.goat.poseUntil = now + 800;
+      cell.goat.burstPose = BURST_POSES[cell.goat.type];
+      earn(amt, {r,c}, true);
+      blip(cell.goat.type === "kid" ? 340 : 620, 0.07, "sine", 0.05);
+      blip(cell.goat.type === "kid" ? 420 : 880, 0.09, "triangle", 0.035);
+      renderBoard();
+      renderHeader();
+    }
+
+    function flashInvalid(r, c) {
+      const el = boardEl().querySelector(`[data-r="${r}"][data-c="${c}"]`);
+      if (!el) return;
+      el.classList.add("invalid");
+      setTimeout(() => el.classList.remove("invalid"), 280);
+    }
+
+    function influenceForHolding() {
+      // used when we later hover; for placement preview we highlight valid tiles + radius if we have a hover
+      return holding;
+    }
+
+    function renderHeader() {
+      $("zen").textContent = fmt(state.zen);
+      const rate = totalOutput();
+      $("rate").textContent = fmt(rate);
+      const eff = efficiency();
+      const effEl = $("eff");
+      if (eff == null) {
+        effEl.textContent = "—";
+        effEl.className = "";
+      } else {
+        effEl.textContent = Math.round(eff) + "%";
+        effEl.className = eff >= 75 ? "high" : eff >= 45 ? "mid" : "low";
+      }
+      $("loc-name").textContent = LOCATIONS[state.loc].name;
+      document.body.classList.toggle("barn", LOCATIONS[state.loc].id === "barn");
+      document.body.classList.toggle("mountain", LOCATIONS[state.loc].id === "mountain");
+    }
+
+    function renderBoard() {
+      const board = boardEl();
+      const showAll = !!(hoverCell || selected || holding);
+      board.classList.toggle("show-all", showAll);
+      const now = Date.now();
+
+      let hoverInfl = null;
+      const focus = holding && hoverCell ? hoverCell : selected;
+      // If holding gong/hay/etc and hovering a valid tile, preview influence there
+      if (holding && hoverCell && holding.kind === "equip" && holding.type !== "mat") {
+        hoverInfl = { type: holding.type, r: hoverCell.r, c: hoverCell.c };
+      } else if (selected) {
+        const cell = state.grid[selected.r][selected.c];
+        if (cell.equip && cell.equip.type !== "mat") hoverInfl = { type: cell.equip.type, r: selected.r, c: selected.c };
+      }
+
+      if (board.children.length !== ROWS * COLS) {
+        board.innerHTML = "";
+        for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
+          const el = document.createElement("div");
+          el.className = "cell" + (r%2 ? " row-odd" : "");
+          el.dataset.r = r; el.dataset.c = c;
+          el.addEventListener("pointerup", (ev) => {
+            ev.preventDefault();
+            ensureAudio();
+            onCellPointer(r, c);
+          });
+          el.addEventListener("pointerenter", () => { hoverCell = {r,c}; renderBoard(); renderInspector(); });
+          el.addEventListener("pointerleave", () => { if (hoverCell && hoverCell.r===r && hoverCell.c===c) { hoverCell=null; renderBoard(); } });
+          board.appendChild(el);
+        }
+      }
+
+      for (const el of board.children) {
+        const r = +el.dataset.r, c = +el.dataset.c;
+        const cell = state.grid[r][c];
+        const isSel = selected && selected.r===r && selected.c===c;
+        let hlAdj=false, hlRad=false;
+        if (hoverInfl) {
+          if (hoverInfl.type === "gong") {
+            const d = chebyshev(r,c, hoverInfl.r, hoverInfl.c);
+            if (d > 0 && d <= 2) hlRad = true;
+          } else if (["hay","smoothie","beam"].includes(hoverInfl.type)) {
+            if (Math.abs(r-hoverInfl.r)+Math.abs(c-hoverInfl.c) === 1) hlAdj = true;
+          }
+        }
+        el.className = "cell" + (r%2 ? " row-odd" : "") + (isSel ? " selected" : "") + (hlAdj?" hl-adj":"") + (hlRad?" hl-rad":"");
+        if (hoverCell && hoverCell.r===r && hoverCell.c===c) el.classList.add("show-mult");
+
+        let html = "";
+        if (cell.equip) {
+          if (cell.equip.type === "mat") html += '<div class="mat"></div>';
+          else if (cell.equip.type === "hay") html += '<div class="hay"></div>';
+          else if (cell.equip.type === "gong") html += '<div class="gong-eq"></div>';
+          else if (cell.equip.type === "smoothie") html += '<div class="smoothie-eq">🥤</div>';
+          else if (cell.equip.type === "beam") html += '<div class="beam-eq"></div>';
+        }
+        if (cell.goat) {
+          const posing = cell.goat.poseUntil && now < cell.goat.poseUntil;
+          const pose = posing ? (cell.goat.burstPose || BURST_POSES[cell.goat.type]) : IDLE_POSES[cell.goat.type];
+          const b = tileBreakdown(state.grid, r, c);
+          const mult = b ? (b.rate / (b.base * b.gMult * b.pmult)) : 1;
+          html += `<div class="goat ${cell.goat.type}${posing?" posing":""}"><div class="tint"></div><div class="body">🐐</div><div class="pose">${pose}</div></div>`;
+          html += `<div class="mult-tag">×${(Math.round(mult*10)/10).toFixed(1)}</div>`;
+        }
+        el.innerHTML = html;
+      }
+    }
+
+    function renderInspector() {
+      const info = $("insp-info");
+      const actions = $("insp-actions");
+      actions.innerHTML = "";
+      if (holding) {
+        const it = ITEMS[holding.type];
+        const cost = holding.source === "shop" ? itemCost(holding.type) : 0;
+        info.innerHTML = `<strong>Placing ${it.name}</strong>${holding.source==="shop"?" · "+fmt(cost)+" zen":" (move)"} — tap a valid tile.`;
+        const cancel = document.createElement("button");
+        cancel.className = "ghost";
+        cancel.textContent = "Cancel";
+        cancel.addEventListener("click", () => { cancelHolding(); });
+        actions.appendChild(cancel);
+        return;
+      }
+      const focus = selected || hoverCell;
+      if (!focus) {
+        info.textContent = "Tap a tile, or pick something from the shop to place.";
+        return;
+      }
+      const cell = state.grid[focus.r][focus.c];
+      const b = tileBreakdown(state.grid, focus.r, focus.c);
+      if (cell.goat && b) {
+        const parts = [];
+        parts.push(b.onMat ? `mat ×${b.mMult}` : "bare grass ×1");
+        if (b.hayN) parts.push(`hay +${Math.round(b.hay*100)}%`);
+        if (b.smoothieN) parts.push(`smoothie +${Math.round(b.smoothie*100)}%`);
+        if (b.beamN) parts.push(`beam +${Math.round(b.beam*100)}%`);
+        if (b.gongN) parts.push(`gong +${Math.round(b.gong*100)}%`);
+        if (b.partnerN) parts.push(`partner pose +${Math.round(b.partner*100)}%`);
+        if (b.kidN) parts.push(`rowdy −${Math.round(b.kids*100)}%`);
+        info.innerHTML = `<strong>${ITEMS[b.type].name}</strong> ${fmt(b.rate)}/s · ${parts.join(" · ")}`;
+        if (selected && selected.r===focus.r && selected.c===focus.c) {
+          const mv = document.createElement("button");
+          mv.textContent = "Move goat";
+          mv.addEventListener("click", () => pickup(focus.r, focus.c, "goat"));
+          actions.appendChild(mv);
+          if (cell.equip) {
+            const me = document.createElement("button");
+            me.className = "ghost";
+            me.textContent = "Move " + ITEMS[cell.equip.type].name.split(" ")[0].toLowerCase();
+            me.addEventListener("click", () => pickup(focus.r, focus.c, "equip"));
+            actions.appendChild(me);
+          }
+        }
+        return;
+      }
+      if (cell.equip) {
+        info.innerHTML = `<strong>${ITEMS[cell.equip.type].name}</strong> ${ITEMS[cell.equip.type].desc}`;
+        if (selected && selected.r===focus.r && selected.c===focus.c) {
+          const me = document.createElement("button");
+          me.textContent = "Move";
+          me.addEventListener("click", () => pickup(focus.r, focus.c, "equip"));
+          actions.appendChild(me);
+        }
+        return;
+      }
+      info.textContent = "Empty grass. Goats still work here — just slower than on a mat.";
+    }
+
+    function renderShop() {
+      const panel = $("panel-shop");
+      panel.innerHTML = "";
+      for (const type of SHOP_ORDER) {
+        const it = ITEMS[type];
+        const open = unlocked(type);
+        const cost = itemCost(type);
+        const can = open && state.zen >= cost && !holding;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "shop-item" + (!open ? " locked" : "") + (holding && holding.source==="shop" && holding.type===type ? " selected" : "");
+        const lockNote = open ? it.desc : "Opens after " + fmt(it.unlock) + " zen earned.";
+        btn.innerHTML = `<div class="ico">${it.emoji}</div><div class="meta"><b>${it.name}</b><span>${lockNote}</span></div><div class="price${can||!open?"":" na"}">${open?fmt(cost):"🔒"}</div>`;
+        btn.disabled = !open || !!holding && !(holding.source==="shop" && holding.type===type);
+        btn.addEventListener("click", () => {
+          if (!open) return;
+          if (holding && holding.source==="shop" && holding.type===type) { holding=null; renderAll(); hintForBoard(); return; }
+          if (holding) return;
+          if (state.zen < cost) { setHint("Need " + fmt(cost) + " zen for a " + it.name + "."); blip(160,0.1,"square",0.03); return; }
+          holding = { source:"shop", kind: it.kind, type };
+          selected = null;
+          renderAll();
+          hintForBoard();
+        });
+        panel.appendChild(btn);
+      }
+    }
+
+    function renderUpgrades() {
+      const panel = $("panel-upgrades");
+      panel.innerHTML = "";
+      for (const key of Object.keys(UPGRADES)) {
+        const u = UPGRADES[key];
+        const lvl = state.upg[key];
+        const maxed = lvl >= u.costs.length;
+        const cost = maxed ? 0 : u.costs[lvl];
+        const next = maxed ? "Maxed" : u.labels[lvl];
+        const can = !maxed && state.zen >= cost;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "upg-item" + (maxed ? " locked" : "");
+        btn.innerHTML = `<div class="ico">${key==="mats"?"🧘":key==="om"?"🕉️":key==="joints"?"🤸":"🌙"}</div><div class="meta"><b>${u.name}</b><span>${u.desc} Next: ${next}</span></div><div class="price${can||maxed?"":" na"}">${maxed?"✓":fmt(cost)}</div>`;
+        btn.addEventListener("click", () => {
+          if (maxed) return;
+          if (state.zen < cost) { setHint("Need " + fmt(cost) + " zen for " + u.name + "."); return; }
+          spend(cost);
+          state.upg[key]++;
+          blip(660,0.1,"sine",0.05); blip(880,0.12,"sine",0.04);
+          setHint(u.name + " upgraded — " + u.labels[lvl] + ".");
+          renderAll();
+          save();
+        });
+        panel.appendChild(btn);
+      }
+    }
+
+    function renderRetreat() {
+      const panel = $("panel-retreat");
+      const loc = LOCATIONS[state.loc];
+      const next = LOCATIONS[state.loc+1];
+      const ready = next && state.totalEarned >= loc.nextAt;
+      panel.innerHTML = `
+        <div class="retreat-card">
+          <h3>${loc.name}</h3>
+          <p>${loc.flavor} Prestige multiplier ×${(Math.round(state.prestigeMult*100)/100)} · Lifetime zen ${fmt(state.totalEarned)}.</p>
+          ${next ? `<p>Move to <b>${next.name}</b> after ${fmt(loc.nextAt)} lifetime zen. Resets the yard and purchases, keeps a permanent ×1.5 multiplier (stacks).</p>
+            <button type="button" id="btn-prestige" ${ready?"":"disabled"}>${ready?"Move the retreat to "+next.name:"Need "+fmt(loc.nextAt)+" lifetime zen"}</button>` : `<p>That's the end of the trail for this prototype.</p>`}
+        </div>
+        <div class="retreat-card">
+          <h3>Camp options</h3>
+          <p class="mute-dot">Progress saves automatically on this device. Offline zen accrues up to ${offlineHours()} hours.</p>
+          <div class="row-btns">
+            <button type="button" id="btn-mute" class="ghost">${state.muted?"Unmute":"Mute"}</button>
+            <button type="button" id="btn-help" class="ghost">How to play</button>
+            <button type="button" id="btn-reset" class="warn">Reset</button>
+          </div>
+        </div>`;
+      const p = $("btn-prestige");
+      if (p) p.addEventListener("click", () => {
+        if (!ready) return;
+        openModal(
+          `<h2>Move to ${next.name}?</h2>
+           <p>The yard resets. You keep a permanent ×1.5 zen multiplier (now ×${fmt(state.prestigeMult*1.5)} total). Your current layout and unspent zen will be left behind.</p>
+           <div class="row-btns">
+             <button type="button" class="ghost" data-act="close">Stay</button>
+             <button type="button" data-act="prestige">Move the retreat</button>
+           </div>`
+        );
+      });
+      $("btn-mute").addEventListener("click", () => { state.muted = !state.muted; save(); renderRetreat(); });
+      $("btn-help").addEventListener("click", () => showHelp(false));
+      $("btn-reset").addEventListener("click", () => {
+        openModal(
+          `<h2>Reset the retreat?</h2>
+           <p>This wipes zen, goats, upgrades, and prestige on this device. There's no undo.</p>
+           <div class="row-btns">
+             <button type="button" class="ghost" data-act="close">Keep playing</button>
+             <button type="button" class="warn" data-act="reset">Reset everything</button>
+           </div>`
+        );
+      });
+    }
+
+    function doPrestige() {
+      const next = LOCATIONS[state.loc+1];
+      if (!next) return;
+      const mult = state.prestigeMult * 1.5;
+      const loc = state.loc + 1;
+      const muted = state.muted;
+      state = freshState();
+      state.prestigeMult = mult;
+      state.loc = loc;
+      state.muted = muted;
+      state.seenHelp = true;
+      selected = null;
+      holding = null;
+      setHint("New grounds: " + LOCATIONS[loc].name + ". Permanent multiplier ×" + (Math.round(mult*100)/100) + ".");
+      closeModal();
+      renderAll();
+      save();
+      blip(400,0.12,"sine",0.05); blip(600,0.14,"sine",0.05); blip(800,0.18,"sine",0.05);
+    }
+
+    function doReset() {
+      try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+      state = freshState();
+      selected = null;
+      holding = null;
+      closeModal();
+      setHint("A fresh backyard. One goat, fifteen zen, and a lot of grass.");
+      renderAll();
+      showHelp(true);
+    }
+
+    function renderAll() {
+      renderHeader();
+      renderBoard();
+      renderInspector();
+      renderShop();
+      renderUpgrades();
+      renderRetreat();
+    }
+
+    function openModal(html) {
+      $("modal").innerHTML = html;
+      $("modal-backdrop").classList.add("show");
+    }
+    function closeModal() { $("modal-backdrop").classList.remove("show"); $("modal").innerHTML = ""; }
+
+    $("modal-backdrop").addEventListener("click", (e) => {
+      if (e.target.id === "modal-backdrop") closeModal();
+    });
+    $("modal").addEventListener("click", (e) => {
+      const act = e.target && e.target.dataset && e.target.dataset.act;
+      if (act === "close") closeModal();
+      if (act === "reset") doReset();
+      if (act === "prestige") doPrestige();
+      if (act === "gotit") { state.seenHelp = true; closeModal(); save(); }
+    });
+
+    function showHelp(first) {
+      openModal(
+        `<h2>Goat Yoga</h2>
+         <p>The goats themselves do the yoga. You just arrange the retreat.</p>
+         <ol>
+           <li>Goats make zen even on bare grass.</li>
+           <li>A mat doubles their flow (and can be upgraded).</li>
+           <li>Hay, gongs, smoothie bars, and beams boost nearby goats.</li>
+           <li>Two calm goats (Pygmy or Mountain) standing next to each other unlock a partner-pose bonus.</li>
+           <li>Rowdy kids are cheap but distract their neighbors. Nothing ever breaks — sloppy layouts just run slower.</li>
+           <li>Tap a goat to hold a harder pose for a burst of zen. Drag the layout anytime with Move.</li>
+         </ol>
+         <div class="row-btns"><button type="button" data-act="gotit">${first?"Let's stretch":"Got it"}</button></div>`
+      );
+    }
+
+    document.querySelectorAll("#tabs button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        currentTab = btn.dataset.tab;
+        document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b===btn));
+        document.querySelectorAll(".panel").forEach(p => p.classList.toggle("on", p.id === "panel-"+currentTab));
+      });
+    });
+
+    function serialize() {
+      return {
+        zen: state.zen,
+        totalEarned: state.totalEarned,
+        grid: state.grid,
+        bought: state.bought,
+        upg: state.upg,
+        loc: state.loc,
+        prestigeMult: state.prestigeMult,
+        muted: state.muted,
+        nextId: state.nextId,
+        lastSave: Date.now(),
+        seenHelp: state.seenHelp,
+      };
+    }
+
+    function save() {
+      try {
+        const data = serialize();
+        state.lastSave = data.lastSave;
+        localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+      } catch (e) { /* quota / private mode */ }
+    }
+
+    function applyOffline(savedAt) {
+      const now = Date.now();
+      const elapsedMs = Math.max(0, now - (savedAt || now));
+      const cap = offlineHours() * 3600 * 1000;
+      const used = Math.min(elapsedMs, cap);
+      const rate = totalOutput();
+      const amt = rate * (used / 1000);
+      if (amt >= 1) {
+        state.zen += amt;
+        state.totalEarned += amt;
+        const mins = Math.round(used/60000);
+        const capped = elapsedMs > cap;
+        setHint("The goats kept stretching while you were away" + (mins?` (${mins} min)`:"") + (capped?" — cap reached":"") + ": +" + fmt(amt) + " zen.");
+        return amt;
+      }
+      return 0;
+    }
+
+    function load() {
+      try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) return false;
+        const data = JSON.parse(raw);
+        if (!data || !data.grid || data.grid.length !== ROWS) return false;
+        state.zen = (data.zen != null ? data.zen : 0);
+        state.totalEarned = (data.totalEarned != null ? data.totalEarned : 0);
+        state.grid = data.grid;
+        state.bought = Object.assign(freshState().bought, data.bought||{});
+        state.upg = Object.assign({mats:0,om:0,joints:0,meditation:0}, data.upg||{});
+        state.loc = data.loc || 0;
+        state.prestigeMult = data.prestigeMult || 1;
+        state.muted = !!data.muted;
+        state.nextId = data.nextId || 10;
+        state.seenHelp = !!data.seenHelp;
+        state.lastSave = data.lastSave || Date.now();
+        applyOffline(data.lastSave);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function tick(now) {
+      raf = requestAnimationFrame(tick);
+      if (document.hidden) { lastTick = now; return; }
+      const dt = Math.min(0.25, (now - lastTick) / 1000);
+      lastTick = now;
+      const rate = totalOutput();
+      if (rate > 0 && dt > 0) {
+        const amt = rate * dt;
+        state.zen += amt;
+        state.totalEarned += amt;
+      }
+      // periodic +zen float on a producing goat, not every frame
+      if (now - lastFloat > 1000 && rate > 0) {
+        lastFloat = now;
+        const goats = [];
+        for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) if (state.grid[r][c].goat) goats.push({r,c});
+        if (goats.length) {
+          const g = goats[Math.floor(Math.random()*goats.length)];
+          const b = tileBreakdown(state.grid, g.r, g.c);
+          if (b) spawnFloat(g.r, g.c, b.rate, false);
+        }
+        renderHeader();
+        // cheap shop price refresh
+        if (currentTab === "shop") renderShop();
+        if (currentTab === "upgrades") renderUpgrades();
+        if (currentTab === "retreat") { /* header is enough; button state changes rarely */ }
+      }
+      // update posing goats when pose expires
+      let expired = false;
+      const t = Date.now();
+      for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
+        const g = state.grid[r][c].goat;
+        if (g && g.poseUntil && t >= g.poseUntil) { g.poseUntil = 0; expired = true; }
+      }
+      if (expired) renderBoard();
+    }
+
+    function init() {
+      const loaded = load();
+      const offlineHint = $("hint").textContent;
+      renderAll();
+      if (loaded && offlineHint && offlineHint.indexOf("while you were away") !== -1) setHint(offlineHint);
+      else hintForBoard();
+      if (!loaded && !state.seenHelp) showHelp(true);
+      lastTick = performance.now();
+      raf = requestAnimationFrame(tick);
+      setInterval(save, 5000);
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+          hiddenAt = Date.now();
+          save();
+        } else {
+          lastTick = performance.now();
+          const started = hiddenAt;
+          hiddenAt = 0;
+          if (started && Date.now() - started > 2000) applyOffline(started);
+          renderAll();
+          save();
+        }
+      });
+      window.addEventListener("pagehide", save);
+    }
+
+    function loadFromVisibility(prevSave) {
+      // already have state; just apply offline for the hidden period
+      applyOffline(prevSave);
+      renderAll();
+      save();
+    }
+
+    // Expose a small API for automated tests
+    window.GoatYoga = {
+      COLS, ROWS, ITEMS, SAVE_KEY,
+      getState: () => state,
+      setState: (s) => { state = s; },
+      getHolding: () => holding,
+      setHolding: (h) => { holding = h; },
+      tileBreakdown, totalOutput, idealOutput, efficiency,
+      itemCost, matMult, globalMult, burstSecs, offlineHours,
+      canPlace, placeHeldAt, pickup, cancelHolding, tryBurst,
+      serialize, save, load, applyOffline, fmt,
+      freshState, makeGoat, spend, earn, doPrestige, doReset,
+      renderAll, renderBoard, renderHeader,
+      selectShop(type) {
+        const it = ITEMS[type];
+        holding = { source:"shop", kind: it.kind, type };
+        selected = null;
+        renderAll();
+      },
+      clearSelection() { selected=null; holding=null; },
+      getSelected: () => selected,
+    };
+
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+    else init();
+  })();
+  </script>
+</body>
+</html>

@@ -399,7 +399,67 @@
     }
     .chip .ico { font-size: 1.25rem; line-height: 1; }
     .chip .price { color: var(--sage-dk); font-weight: 700; }
-    .chip.selected { border-color: var(--terracotta); }
+    .chip.selected {
+      border-color: var(--terracotta);
+      background: #fff6ee;
+      box-shadow: 0 0 0 2px rgba(194,106,72,0.45), 0 0 10px rgba(194,106,72,0.4);
+      transform: translateY(-2px);
+    }
+    .chip.selected .price { color: var(--terracotta); font-weight: 800; }
+    #place-mode {
+      display: none;
+      position: absolute;
+      top: 6px; left: 8px; right: 8px;
+      z-index: 8;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+    }
+    #place-mode.show { display: flex; }
+    #place-mode .place-chip {
+      flex: 1 1 auto; min-width: 0;
+      background: rgba(250,244,234,0.96);
+      border: 2px solid var(--terracotta);
+      box-shadow: 0 2px 8px var(--shadow);
+      border-radius: 14px;
+      padding: 6px 12px;
+      color: var(--ink);
+      line-height: 1.25;
+    }
+    #place-mode .place-chip b {
+      display: block; font-size: 0.82rem; font-weight: 800;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    #place-mode .place-chip span {
+      display: block; font-size: 0.68rem; font-weight: 500;
+      color: var(--ink-soft);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    #btn-cancel-place {
+      pointer-events: auto;
+      flex: 0 0 auto;
+      font: inherit; font-size: 0.8rem; font-weight: 800;
+      padding: 8px 12px; min-height: 36px;
+      border-radius: 999px;
+      border: 2px solid #5a2e22;
+      background: var(--terracotta); color: #fff;
+      box-shadow: 0 2px 6px var(--shadow);
+      cursor: pointer;
+    }
+    #toast {
+      position: absolute; left: 50%; top: 46%;
+      transform: translate(-50%, 10px);
+      background: rgba(58,42,34,0.94); color: #fff8dc;
+      padding: 8px 14px; border-radius: 999px;
+      font-size: 0.8rem; font-weight: 700;
+      z-index: 12; pointer-events: none;
+      opacity: 0; transition: opacity .2s, transform .2s;
+      max-width: 88%; text-align: center;
+      box-shadow: 0 4px 14px rgba(58,42,34,0.35);
+    }
+    #toast.show { opacity: 1; transform: translate(-50%, 0); }
+    #board-wrap.placing #hint { display: none; }
+
     .chip.locked { opacity: 0.45; }
     .chip.stored { border-color: #c9a227; }
     .chip.na .price { color: var(--danger); }
@@ -661,7 +721,7 @@
   </style>
 </head>
 <body>
-  <div id="app" data-version="3" data-game="yoga-mogul">
+  <div id="app" data-version="4" data-game="yoga-mogul">
     <header id="hud">
       <h1>🧘 <span>Yoga Mogul</span></h1>
       <div class="hud-stats">
@@ -690,12 +750,17 @@
       <div id="floats"></div>
       <div id="ghost"></div>
       <div id="hint">A quiet neighborhood studio. Classes fill the mats.</div>
+      <div id="place-mode" hidden>
+        <div class="place-chip" id="place-chip"><b>Placing</b><span></span></div>
+        <button type="button" id="btn-cancel-place" aria-label="Cancel placement">✕ Cancel</button>
+      </div>
+      <div id="toast" role="status" aria-live="polite"></div>
       <button type="button" id="btn-auras" aria-pressed="false">Show auras</button>
     </div>
     <div id="sheet" class="collapsed">
       <div id="tip">
         <b>Welcome to your first studio.</b>
-        Cash is what you spend. The zen meter is a live studio rating — auras and yogis lift it, neglect and crowding drop it — and it multiplies class payouts (50 zen is 1.0×, 100 is 2.0×). Tap a mat or yogi to inspect its multiplier breakdown; drag to move (never a second tap). Select a shop item to preview its range, then tap a tile twice (or Place here) to buy. Train your yogi in a short, friendly minigame for XP.
+        Cash is what you spend. The zen meter is a live studio rating — auras and yogis lift it, neglect and crowding drop it — and it multiplies class payouts (50 zen is 1.0×, 100 is 2.0×). Tap a mat or yogi to inspect its multiplier breakdown; drag to move (never a second tap). Pick something in the shop to place more of it: on a phone, tap a tile to preview, then tap it again to buy; on a computer, click once to place. Stay in placement to drop another, or Cancel / tap the shop item / tap off the grid to stop. Train your yogi in a short, friendly minigame for XP.
         <div class="row"><button type="button" data-act="gotit">Let's stretch</button></div>
       </div>
       <div id="tasks"></div>
@@ -1481,20 +1546,31 @@
       return n.toFixed(1);
     }
 
+    let toastTimer = 0;
+    function showToast(msg) {
+      const el = $("toast");
+      if (!el) { setHint(msg); return; }
+      el.textContent = msg;
+      el.classList.add("show");
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { el.classList.remove("show"); toastTimer = 0; }, 2200);
+    }
+
     function setHint(t) { const el=$("hint"); if (el) el.textContent = t || ""; }
     function hintForBoard() {
       if (pendingOfflineHint) { setHint(pendingOfflineHint); return; }
       if (holding) {
         const name = holdingName();
+        const verb = holding.source==="roster" ? "assign " : "place ";
         if (placeTarget) {
           const ok = canPlace(holding.type, holding.kind, placeTarget.r, placeTarget.c);
           setHint(ok
-            ? ("Aimed at this tile. Tap it again or hit Place here to " + (holding.source==="roster" ? "assign " : "buy the ") + name + ".")
-            : ("That tile is taken. Aim at an empty tile to place " + name + " — nothing is spent yet."));
+            ? ("Preview on this tile. Tap it again to " + verb + name + " — or tap another tile to move the preview.")
+            : ("That tile is taken. Aim at an empty tile to " + verb + name + " — nothing is spent yet."));
         } else if (hoverCell) {
-          setHint("Previewing on this tile. Tap it to aim — nothing is bought until you confirm.");
+          setHint("Previewing here. Click to place, or on a phone tap once to aim and again to confirm.");
         } else {
-          setHint("Sample range shown on the floor. Slide over tiles to preview, then tap one to aim — nothing is bought until you confirm.");
+          setHint("Placing " + name + ". Hover or tap a tile to preview its range, then click — or tap twice on a phone — to drop it.");
         }
         return;
       }
@@ -1687,12 +1763,26 @@
         cell.trainerId = tr.id;
         tr.slotted = true;
       } else return false;
+      blip(520, 0.08, "triangle", 0.05);
+      const src = holding.source;
+      const typ = holding.type;
+      const name = holdingName();
+      const keep = src === "shop" && !(ITEMS[typ] && ITEMS[typ].unique) && state.cash >= itemCost(typ);
+      if (keep) {
+        placeTarget = null;
+        hoverCell = null;
+        selected = null;
+        afterLayout();
+        return true;
+      }
       holding = null;
       placeTarget = null;
       hoverCell = null;
-      selected = { r, c, role: defaultRole(cell) };
-      blip(520, 0.08, "triangle", 0.05);
+      selected = null;
       afterLayout();
+      if (src === "shop" && !(ITEMS[typ] && ITEMS[typ].unique)) {
+        showToast("Not enough cash for another " + name + ".");
+      }
       return true;
     }
 
@@ -1764,20 +1854,42 @@
       return ok;
     }
 
-    function onCellTap(r, c) {
+    function isTwoStepPlace(ev) {
+      const typ = ev && ev.pointerType;
+      if (typ === "mouse") return false;
+      if (typ === "touch" || typ === "pen") return true;
+      return false;
+    }
+
+    function onCellTap(r, c, ev) {
       if (holding) {
-        if (placeTarget && placeTarget.r===r && placeTarget.c===c) {
-          confirmPlace();
+        const twoStep = isTwoStepPlace(ev);
+        if (twoStep) {
+          if (placeTarget && placeTarget.r===r && placeTarget.c===c) {
+            confirmPlace();
+            return;
+          }
+          placeTarget = { r, c };
+          hoverCell = { r, c };
+          if (!canPlace(holding.type, holding.kind, r, c)) {
+            flashClass(r,c,"invalid");
+            blip(180, 0.1, "square", 0.03);
+          }
+          renderAll();
+          hintForBoard();
           return;
         }
+        // Mouse: a click (or drag-release) places immediately.
         placeTarget = { r, c };
         hoverCell = { r, c };
         if (!canPlace(holding.type, holding.kind, r, c)) {
           flashClass(r,c,"invalid");
           blip(180, 0.1, "square", 0.03);
+          renderAll();
+          hintForBoard();
+          return;
         }
-        renderAll();
-        hintForBoard();
+        confirmPlace();
         return;
       }
       const cell = state.grid[r][c];
@@ -2473,7 +2585,7 @@
     function onPointerDown(ev) {
       if (minigame) return;
       if (ev.button != null && ev.button !== 0) return;
-      if (ev.target.closest && ev.target.closest("#sel-bar, #tip, #sheet, #hud, #minigame, #btn-auras, button, .task-chip")) return;
+      if (ev.target.closest && ev.target.closest("#sel-bar, #tip, #sheet, #hud, #minigame, #btn-auras, #place-mode, #btn-cancel-place, #toast, button, .task-chip")) return;
       ev.stopPropagation();
       const hit = cellFromPoint(ev.clientX, ev.clientY);
       if (!hit) {
@@ -2552,8 +2664,8 @@
         return;
       }
       if (holding || d.isAim) {
-        if (hit) onCellTap(hit.r, hit.c);
-        else { hoverCell = null; renderBoard(); renderSelBar(); hintForBoard(); }
+        if (hit) onCellTap(hit.r, hit.c, ev);
+        else { hoverCell = null; renderBoard(); renderSelBar(); renderPlaceMode(); hintForBoard(); }
         return;
       }
       if (d.active && d.from) {
@@ -2572,7 +2684,7 @@
         return;
       }
       // tap
-      if (hit) onCellTap(hit.r, hit.c);
+      if (hit) onCellTap(hit.r, hit.c, ev);
       else deselectAll();
     }
 
@@ -2850,39 +2962,49 @@
       renderAuraLines();
     }
 
+    function renderPlaceMode() {
+      const el = $("place-mode");
+      const wrap = $("board-wrap");
+      if (!el) return;
+      const on = !!holding;
+      el.classList.toggle("show", on);
+      el.hidden = !on;
+      if (wrap) wrap.classList.toggle("placing", on);
+      if (!on) return;
+      const def = holding.kind==="trainer" ? trainerDef(holding.type) : ITEMS[holding.type];
+      const name = (def && (def.name || def.short)) || holdingName();
+      const emoji = def && def.emoji ? def.emoji + " " : "";
+      const cost = holding.source==="shop" ? itemCost(holding.type) : 0;
+      let title = "Placing: " + emoji + name;
+      if (holding.source==="shop") title += "  $" + fmt(cost);
+      else if (holding.source==="roster") title += " — assign to a slot";
+      else title += " — from storage";
+      const b = el.querySelector("b");
+      const span = el.querySelector("span");
+      if (b) b.textContent = title;
+      if (span) {
+        const extra = (def && def.desc ? def.desc : "") + (rangeText(holding.type) ? " " + rangeText(holding.type) : "");
+        const aimed = !!placeTarget;
+        const okAim = aimed && canPlace(holding.type, holding.kind, placeTarget.r, placeTarget.c);
+        span.textContent = aimed
+          ? (okAim ? "Tap this tile again to confirm, or tap another tile to move the preview." : "That tile is taken — choose an empty one.")
+          : (extra || "Hover or tap a tile to preview, then click or tap again to place.");
+      }
+    }
+
     function renderSelBar() {
       const bar = $("sel-bar");
       const info = $("sel-info");
       const btnPlace = $("btn-place"), btnFlow = $("btn-flow"), btnTrain = $("btn-train");
       const btnRepair = $("btn-repair"), btnStore = $("btn-store");
-      const show = !!(holding || selected);
+      const show = !!(selected && !holding);
       bar.classList.toggle("show", show);
+      renderPlaceMode();
       if (!show) { sizeBoard(); return; }
       btnPlace.hidden = true; btnFlow.hidden = true; btnTrain.hidden = true; btnRepair.hidden = true;
       btnStore.hidden = false; btnStore.textContent = "Store";
       $("sel-bar").querySelector('[data-act="sell"]').hidden = false;
-      if (holding) {
-        const name = holdingName();
-        const def = holding.kind==="trainer" ? trainerDef(holding.type) : ITEMS[holding.type];
-        const cost = holding.source==="shop" ? itemCost(holding.type) : 0;
-        const aimed = !!placeTarget;
-        const okAim = aimed && canPlace(holding.type, holding.kind, placeTarget.r, placeTarget.c);
-        let head = def.emoji + " " + (def.name || name);
-        if (holding.source==="shop") head += " — $" + fmt(cost);
-        else if (holding.source==="roster") head += " — assign to a slot";
-        else head += " — from storage";
-        const extra = holding.kind==="trainer" ? def.desc : def.desc;
-        const aimTxt = aimed
-          ? (okAim ? " Aimed here. Tap this tile again or Place here to confirm — nothing is spent until then."
-                  : " That tile is taken. Aim at an empty one.")
-          : " Sample range is shown on the floor. Slide over a tile to preview, then tap it to aim.";
-        info.innerHTML = "<strong>" + head + "</strong>" + extra + " " + rangeText(holding.type) + aimTxt;
-        btnPlace.hidden = false;
-        btnPlace.textContent = aimed ? "Place here" : "Aim a tile";
-        btnPlace.disabled = !okAim;
-        btnStore.hidden = true;
-        $("sel-bar").querySelector('[data-act="sell"]').hidden = true;
-      } else if (selected) {
+      if (selected) {
         const cell = state.grid[selected.r][selected.c];
         const tr = trainerAt(selected.r, selected.c);
         if (tr) {
@@ -2965,8 +3087,8 @@
         if (na && open) cls.push("na");
         if (sel) cls.push("selected");
         const shortName = ({mat:"Yoga mat",plant:"Plant",incense:"Incense",speakers:"Speakers",lighting:"Lighting",water:"Water",lamps:"Salt lamps",mirror:"Mirror",gong:"Gong"})[type] || it.name;
-        const lockLabel = !open ? (it.award && !state.awards[it.award] ? "🏆" : "🔒") : ("$" + fmt(cost));
-        html += '<button type="button" class="'+cls.join(" ")+'" data-shop="'+type+'"><div class="ico">'+it.emoji+'</div>'+shortName+'<div class="price">'+lockLabel+'</div></button>';
+        const lockLabel = !open ? (it.award && !state.awards[it.award] ? "🏆" : "🔒") : (sel ? "Placing" : ("$" + fmt(cost)));
+        html += '<button type="button" class="'+cls.join(" ")+'" data-shop="'+type+'" aria-pressed="'+(sel?"true":"false")+'"><div class="ico">'+it.emoji+'</div>'+shortName+'<div class="price">'+lockLabel+'</div></button>';
       }
       strip.innerHTML = html;
     }
@@ -3188,6 +3310,8 @@
 
       const aurasBtn = $("btn-auras");
       if (aurasBtn) aurasBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleAuras(); });
+      const cancelPlace = $("btn-cancel-place");
+      if (cancelPlace) cancelPlace.addEventListener("click", (e) => { e.stopPropagation(); deselectAll(); });
 
       const wrap = $("board-wrap");
       wrap.addEventListener("pointerdown", onPointerDown);
@@ -3211,7 +3335,7 @@
         if (minigame) return;
         if (!(holding || selected)) return;
         if (e.defaultPrevented) return;
-        if (e.target.closest && e.target.closest("#board .cell, #sheet, #sel-bar, #tip, #tasks, #minigame, button, input")) return;
+        if (e.target.closest && e.target.closest("#board .cell, #sheet, #sel-bar, #tip, #tasks, #minigame, #place-mode, #toast, button, input")) return;
         if (e.target.id === "board-wrap" || e.target.id === "hint" || e.target.id === "fx-layer" ||
             e.target.id === "floats" || e.target.id === "ghost" || e.target.id === "app" ||
             e.target.id === "class-bar" || e.target.id === "class-fill" ||
@@ -3229,7 +3353,7 @@
 
     function serialize() {
       return {
-        version: 3, cash: state.cash, totalEarned: state.totalEarned,
+        version: 4, cash: state.cash, totalEarned: state.totalEarned,
         grid: state.grid, bought: state.bought, upg: state.upg,
         roster: state.roster, nextTrainerId: state.nextTrainerId,
         trainerSlots: slotCap(), staff: state.staff, muted: state.muted,
@@ -3282,7 +3406,7 @@
       s.zenHighSince = +raw.zenHighSince || 0;
       s.showAuras = !!raw.showAuras;
       s.roster.forEach(tr => { tr.certs = Array.isArray(tr.certs) ? tr.certs : []; tr.minigames = +tr.minigames || 0; });
-      s.version = 3;
+      s.version = 4;
       return s;
     }
     function applyOffline(fromTs) {
@@ -3376,7 +3500,7 @@
     }
 
     window.YogaMogul = {
-      version: 3, COLS, ROWS, ITEMS, TRAINERS, LOCKED_CREW, SHOP_ORDER, SAVE_KEY, CLASS_MS, MG_MS, MG_INTRO_MS, CERTS, AWARDS, COMFORT_CAP, DRAG_THRESHOLD, DRAG_HOLD_MS,
+      version: 4, COLS, ROWS, ITEMS, TRAINERS, LOCKED_CREW, SHOP_ORDER, SAVE_KEY, CLASS_MS, MG_MS, MG_INTRO_MS, CERTS, AWARDS, COMFORT_CAP, DRAG_THRESHOLD, DRAG_HOLD_MS,
       getState: () => state,
       setState: (s) => { state = s; },
       getHolding: () => holding,
@@ -3399,7 +3523,7 @@
       recruitTrainer, assignTrainer, benchTrainer,
       startMinigame, endMinigame, closeMinigame, onMinigamePointer,
       createMinigameState, mgTickLogic, mgTapLogic, mgScorePct, simulateHumanPlay,
-      seatBreakdown, emitterInfo, coverageSources, fmtFactor, toggleAuras,
+      seatBreakdown, emitterInfo, coverageSources, fmtFactor, toggleAuras, showToast, renderPlaceMode, isTwoStepPlace,
       renderAll, renderBoard, renderHeader, renderCrew,
       selectShop, selectStored, onCellTap, confirmPlace, deselectAll,
       hideTip, showTip, clearSelection() { deselectAll(); },

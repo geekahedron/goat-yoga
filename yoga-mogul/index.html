@@ -1,0 +1,2584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#c9a07a" />
+  <title>Yoga Mogul</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧘</text></svg>" />
+  <style>
+    :root {
+      --ink: #3a2a22;
+      --ink-soft: #6a5348;
+      --cream: #faf4ea;
+      --paper: #f3e6d4;
+      --sage: #6b7f5a;
+      --sage-dk: #4d5e40;
+      --floor-1: #e8c9a0;
+      --floor-2: #deb890;
+      --floor-edge: #b88962;
+      --terracotta: #c26a48;
+      --gold: #d4a04a;
+      --mat: #c97868;
+      --mat-stripe: #b86658;
+      --danger: #c44b3a;
+      --ok: #2e7d4f;
+      --shadow: rgba(58, 42, 34, 0.2);
+      --cell: 48px;
+      --hud-h: 52px;
+      --sheet-h: 86px;
+      --safe-t: env(safe-area-inset-top, 0px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --safe-l: env(safe-area-inset-left, 0px);
+      --safe-r: env(safe-area-inset-right, 0px);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      overflow: hidden;
+      overscroll-behavior: none;
+      touch-action: manipulation;
+      background: #c9a07a;
+      color: var(--ink);
+      font-family: ui-rounded, "SF Pro Rounded", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+      user-select: none;
+    }
+    #app {
+      height: 100dvh; height: 100svh;
+      max-height: 100dvh; max-height: 100svh;
+      display: flex; flex-direction: column;
+      padding: var(--safe-t) var(--safe-r) 0 var(--safe-l);
+      max-width: 560px;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(255,244,220,0.35), transparent 55%),
+        #c9a07a;
+    }
+    #hud {
+      flex: 0 0 auto;
+      display: flex; align-items: center; gap: 8px;
+      padding: 4px 8px 0 6px;
+      min-height: var(--hud-h);
+      background: linear-gradient(180deg, rgba(250,244,234,0.98), rgba(250,244,234,0.92));
+      border-bottom: 2px solid rgba(58,42,34,0.1);
+      z-index: 8;
+      flex-wrap: nowrap;
+      min-width: 0;
+    }
+    #hud h1 { margin: 0; font-size: 0.95rem; letter-spacing: -0.02em; line-height: 1.1; white-space: nowrap; }
+    #hud h1 span { font-weight: 500; }
+    .hud-stats { margin-left: auto; text-align: right; line-height: 1.15; min-width: 0; flex: 1; }
+    #cash-line { font-size: 1.15rem; font-weight: 700; color: var(--sage-dk); }
+    #cash-line .unit { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+    .substats { font-size: 0.68rem; color: var(--ink-soft); display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+    #eff { font-weight: 700; }
+    #eff.low { color: var(--danger); }
+    #eff.mid { color: #b47818; }
+    #eff.high { color: var(--ok); }
+    .icon-btn {
+      flex-shrink: 0; width: 40px; height: 40px; padding: 0;
+      border: 0; border-radius: 10px;
+      background: var(--paper); color: var(--ink);
+      font: inherit; font-size: 1.1rem; font-weight: 700;
+      cursor: pointer;
+    }
+    #class-bar {
+      flex: 0 0 4px; width: 100%;
+      height: 4px; background: rgba(58,42,34,0.1);
+      overflow: hidden;
+    }
+    #class-bar > span {
+      display: block; height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--terracotta), var(--gold));
+      transition: width 0.12s linear;
+    }
+    #board-wrap {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 0;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 6px;
+      touch-action: none;
+      overflow: hidden;
+    }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(6, var(--cell));
+      grid-template-rows: repeat(6, var(--cell));
+      gap: 2px;
+      padding: 5px;
+      background: var(--floor-edge);
+      border-radius: 12px;
+      box-shadow: 0 6px 16px var(--shadow), inset 0 0 0 2px rgba(255,255,255,0.2);
+      position: relative;
+      touch-action: none;
+      z-index: 1;
+    }
+    .cell {
+      position: relative;
+      width: var(--cell); height: var(--cell);
+      background: var(--floor-1);
+      border-radius: 5px;
+      overflow: hidden;
+      touch-action: none;
+    }
+    .cell:nth-child(even) { background: var(--floor-2); }
+    .cell.row-odd:nth-child(even) { background: var(--floor-1); }
+    .cell.row-odd:nth-child(odd) { background: var(--floor-2); }
+    .cell.selected { outline: 3px solid #fff; outline-offset: -3px; z-index: 3; box-shadow: inset 0 0 0 2px var(--terracotta); }
+    .cell.invalid { outline: 3px solid var(--danger); outline-offset: -3px; }
+    .cell.drop-ok { outline: 3px solid #fff8a0; outline-offset: -3px; z-index: 3; }
+    .cell.lifted { opacity: 0.35; }
+    .cell.hl-adj { background: #f0d56a !important; }
+    .cell.hl-cross { background: #f4c37a !important; }
+    .cell.hl-diag { background: #9ad4e0 !important; }
+    .cell.hl-rad { background: #e0b8f0 !important; }
+    .cell.pulse { animation: cellPulse 0.55s ease; }
+    .cell.aim { outline: 3px solid #fff8a0; outline-offset: -3px; z-index: 3; }
+    .cell.aim-sample { outline: 2px dashed rgba(255,248,160,0.85); outline-offset: -3px; z-index: 3; }
+    .cell.broken { filter: saturate(0.7); }
+    .cell .mat {
+      position: absolute; inset: 16% 10%;
+      background: linear-gradient(90deg, var(--mat) 8%, var(--mat-stripe) 8%, var(--mat-stripe) 12%, var(--mat) 12%);
+      border-radius: 3px;
+    }
+    .cell .mat.torn { background: linear-gradient(90deg, #a06058 8%, #7a4038 8%, #7a4038 12%, #a06058 12%); box-shadow: inset 0 0 0 1px rgba(80,20,10,0.35); }
+    .cell .mat.torn::after { content: ""; position: absolute; left: 20%; right: 30%; top: 45%; height: 2px; background: rgba(80,20,10,0.55); transform: rotate(-18deg); }
+    .cell .plant-eq, .cell .incense-eq, .cell .speakers-eq, .cell .lighting-eq, .cell .water-eq, .cell .desk-eq, .cell .emoji-eq {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: calc(var(--cell) * 0.5);
+      pointer-events: none;
+      filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2));
+    }
+    .cell .desk-eq { font-size: calc(var(--cell) * 0.46); background: linear-gradient(180deg, #d9b080, #b88962); border-radius: 4px; inset: 14% 8%; }
+    .cell .speakers-eq.blown { filter: grayscale(0.7); opacity: 0.7; }
+    .cell .plant-eq.wilted { filter: grayscale(0.5) brightness(0.85); }
+    .trainer {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      pointer-events: none; z-index: 1;
+    }
+    .trainer .body { font-size: calc(var(--cell) * 0.5); line-height: 1; animation: bob 2.6s ease-in-out infinite; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.25)); }
+    .trainer.flowing .body { animation: posePop 0.7s ease; }
+    .trainer .lvl { font-size: calc(var(--cell) * 0.18); font-weight: 700; color: var(--ink); background: rgba(255,255,255,0.7); border-radius: 3px; padding: 0 2px; line-height: 1.2; }
+    .student {
+      position: absolute; inset: 6% 0 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: calc(var(--cell) * 0.42);
+      pointer-events: none; z-index: 2;
+      animation: bob 2.1s ease-in-out infinite;
+      filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2));
+    }
+    .mult-tag {
+      position: absolute; top: 1px; right: 1px;
+      font-size: 9px; font-weight: 700; color: #fff;
+      background: rgba(58,42,34,0.5);
+      border-radius: 4px; padding: 0 3px; line-height: 1.3; z-index: 2;
+      pointer-events: none;
+    }
+    .mult-tag.preview { background: #4d5e40; }
+    .fix-badge {
+      position: absolute; bottom: 1px; left: 1px;
+      font-size: 9px; font-weight: 700;
+      background: var(--danger); color: #fff;
+      border-radius: 4px; padding: 0 3px; line-height: 1.3; z-index: 3;
+      pointer-events: none;
+    }
+    .pest-dots::before {
+      content: "🐜";
+      position: absolute; top: 2px; left: 2px;
+      font-size: calc(var(--cell) * 0.28);
+      pointer-events: none; z-index: 2;
+    }
+    #floats, #fx-layer, #ghost {
+      position: absolute; inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 5;
+    }
+    #fx-layer { z-index: 4; }
+    #ghost { z-index: 7; }
+    .floater {
+      position: absolute; transform: translate(-50%, 0);
+      font-weight: 700; color: #fff8dc;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.45);
+      font-size: 0.85rem; animation: floatUp 0.9s ease-out forwards;
+      white-space: nowrap;
+    }
+    .floater.burst { color: #ffe27a; font-size: 1.05rem; }
+    .ripple {
+      position: absolute; border: 3px solid rgba(255,230,120,0.85);
+      border-radius: 50%; transform: translate(-50%,-50%) scale(0.2);
+      animation: ripple 0.9s ease-out forwards; pointer-events: none;
+    }
+    .ghost-item {
+      position: absolute; width: var(--cell); height: var(--cell);
+      transform: translate(-50%, -120%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: calc(var(--cell) * 0.7);
+      filter: drop-shadow(0 6px 8px rgba(0,0,0,0.35));
+      pointer-events: none;
+    }
+    #hint {
+      position: absolute; top: 6px; left: 8px; right: 8px;
+      text-align: center; font-size: 0.72rem; line-height: 1.25;
+      color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.55);
+      pointer-events: none; z-index: 6;
+    }
+    #tip {
+      flex: 0 0 auto;
+      display: none;
+      background: var(--cream);
+      padding: 8px 10px 6px;
+      font-size: 0.78rem;
+      line-height: 1.35;
+      color: var(--ink);
+      border-bottom: 1px solid rgba(58,42,34,0.08);
+    }
+    #tip.show { display: block; }
+    #tip b { display: block; margin-bottom: 2px; }
+    #tip .row { display: flex; justify-content: flex-end; margin-top: 6px; }
+    #tasks {
+      flex: 0 0 auto;
+      display: none;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 6px 10px 0;
+      background: var(--cream);
+    }
+    #tasks.show { display: flex; }
+    .task-chip {
+      flex: 0 0 auto;
+      background: #fff3d6;
+      border: 1.5px solid var(--terracotta);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font: inherit; font-size: 0.72rem; font-weight: 700;
+      min-height: 32px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .task-chip.overdue { background: #f8d4cc; }
+    #sel-bar {
+      flex: 0 0 auto;
+      display: none; align-items: center; gap: 6px;
+      background: var(--cream);
+      border-top: 1px solid rgba(58,42,34,0.08);
+      padding: 4px 8px;
+      min-height: 44px;
+      pointer-events: auto;
+      z-index: 8;
+    }
+    #sel-bar.show { display: flex; }
+    #sel-info { flex: 1; min-width: 0; font-size: 0.75rem; line-height: 1.25; }
+    #sel-info strong { display: block; font-size: 0.82rem; }
+    #sel-bar button, #tip button, #sheet button, .icon-btn, .task-chip {
+      font: inherit; border: 0; cursor: pointer; font-weight: 600;
+    }
+    #sel-bar button {
+      background: var(--sage); color: #fff;
+      border-radius: 8px; padding: 8px 10px; min-height: 36px;
+      flex-shrink: 0;
+    }
+    #sel-bar button.ghost, #sheet button.ghost, #tip button.ghost {
+      background: transparent; color: var(--ink);
+      border: 1.5px solid rgba(58,42,34,0.25);
+    }
+    #sel-bar button.warn { background: var(--danger); }
+    button:active { transform: scale(0.97); }
+    button:disabled { opacity: 0.4; transform: none; }
+    #sheet {
+      flex: 0 0 auto;
+      background: var(--cream);
+      border-top: 2px solid rgba(58,42,34,0.12);
+      border-radius: 14px 14px 0 0;
+      padding-bottom: var(--safe-b);
+      z-index: 8;
+      display: flex; flex-direction: column;
+      min-height: 0;
+      max-height: 46%;
+    }
+    #sheet.collapsed { max-height: none; }
+    #sheet-handle {
+      flex: 0 0 auto; width: 100%; height: 22px; padding: 0;
+      background: transparent; color: var(--ink-soft);
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 0;
+    }
+    #sheet-handle::before {
+      content: ""; width: 42px; height: 4px; border-radius: 4px;
+      background: rgba(58,42,34,0.28);
+    }
+    #sheet-strip {
+      flex: 0 0 auto;
+      display: flex; gap: 8px;
+      overflow-x: auto; overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-x;
+      padding: 0 10px 8px;
+      scrollbar-width: none;
+    }
+    #sheet-strip::-webkit-scrollbar { display: none; }
+    .chip {
+      flex: 0 0 auto;
+      width: 72px; min-height: 56px;
+      background: #fff; border-radius: 10px;
+      box-shadow: 0 1px 3px var(--shadow);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 1px; padding: 4px 2px;
+      color: var(--ink); cursor: pointer;
+      font-size: 0.62rem; font-weight: 600; line-height: 1.1;
+      border: 2px solid transparent;
+    }
+    .chip .ico { font-size: 1.25rem; line-height: 1; }
+    .chip .price { color: var(--sage-dk); font-weight: 700; }
+    .chip.selected { border-color: var(--terracotta); }
+    .chip.locked { opacity: 0.45; }
+    .chip.stored { border-color: #c9a227; }
+    .chip.na .price { color: var(--danger); }
+    #sheet-body {
+      display: none;
+      flex: 1 1 auto; min-height: 0;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      padding: 0 10px 8px;
+    }
+    #sheet.open #sheet-body { display: block; }
+    #tabs { display: flex; gap: 4px; margin-bottom: 6px; position: sticky; top: 0; background: var(--cream); }
+    #tabs button {
+      flex: 1; background: transparent; color: var(--ink-soft);
+      border-bottom: 3px solid transparent; border-radius: 0;
+      min-height: 36px; padding: 6px 4px;
+    }
+    #tabs button.on { color: var(--ink); border-bottom-color: var(--terracotta); }
+    .panel { display: none; }
+    .panel.on { display: block; }
+    .upg-item, .info-card {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px; border-radius: 10px; background: #fff;
+      margin-bottom: 6px; box-shadow: 0 1px 2px var(--shadow);
+      width: 100%; text-align: left; color: var(--ink);
+      min-height: 52px; cursor: pointer; font: inherit;
+    }
+    .upg-item .ico, .info-card .ico { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; background: var(--paper); border-radius: 8px; flex-shrink: 0; }
+    .upg-item .meta, .info-card .meta { flex: 1; min-width: 0; }
+    .upg-item .meta b, .info-card h3 { display: block; font-size: 0.85rem; margin: 0; }
+    .upg-item .meta span, .info-card p { display: block; font-size: 0.7rem; color: var(--ink-soft); line-height: 1.3; margin: 2px 0 0; }
+    .price { font-weight: 700; font-size: 0.85rem; color: var(--sage-dk); white-space: nowrap; }
+    .price.na { color: var(--danger); }
+    .row-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+    .row-btns button { flex: 1; min-width: 100px; min-height: 40px; background: var(--sage); color: #fff; border-radius: 8px; padding: 8px 10px; }
+    .row-btns button.warn { background: var(--danger); }
+    .confirm { background: #fff3d6; border-radius: 10px; padding: 8px; margin-top: 6px; font-size: 0.8rem; }
+    .locked-card { opacity: 0.75; cursor: default; }
+    .locked-card .ico { filter: grayscale(0.4); }
+
+    .xp-bar { height: 6px; background: rgba(58,42,34,0.12); border-radius: 99px; overflow: hidden; margin-top: 4px; }
+    .xp-bar > span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--sage), #8fa96e); }
+    .crew-card { cursor: default; flex-wrap: wrap; }
+    .crew-card .row-btns { width: 100%; margin: 6px 0 0; }
+    .crew-card .row-btns button { min-width: 0; flex: 1; font-size: 0.78rem; }
+    .crew-card.locked-card { filter: none; }
+    .silhouette .ico { filter: contrast(0) brightness(0.25); opacity: 0.55; }
+    .slot-pill {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      background: var(--paper); border-radius: 99px; padding: 2px 8px; margin-left: 6px;
+      color: var(--ink-soft);
+    }
+    #minigame {
+      display: none;
+      position: absolute; inset: 0;
+      background: rgba(58,42,34,0.45);
+      z-index: 20;
+      align-items: center; justify-content: center;
+      padding: 16px;
+    }
+    #minigame.show { display: flex; }
+    .mg-card {
+      background: var(--cream);
+      border-radius: 16px;
+      width: min(420px, 100%);
+      max-height: 100%;
+      overflow: auto;
+      padding: 14px 14px 12px;
+      box-shadow: 0 10px 28px rgba(58,42,34,0.35);
+    }
+    .mg-head { display: flex; align-items: baseline; gap: 8px; }
+    .mg-head b { font-size: 1.05rem; flex: 1; }
+    #mg-time { font-weight: 700; color: var(--terracotta); }
+    #mg-desc { margin: 6px 0 10px; font-size: 0.8rem; color: var(--ink-soft); line-height: 1.35; }
+    #mg-stage {
+      position: relative;
+      height: 180px;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      touch-action: none;
+      box-shadow: inset 0 0 0 1px rgba(58,42,34,0.08);
+    }
+    #mg-score { text-align: center; font-weight: 700; margin: 8px 0; font-size: 0.9rem; }
+    #mg-stage .zone {
+      position: absolute; background: rgba(107,127,90,0.28);
+      outline: 2px solid rgba(107,127,90,0.5);
+    }
+    #mg-stage .cursor {
+      position: absolute; width: 16px; height: 16px; border-radius: 50%;
+      background: var(--terracotta); box-shadow: 0 0 0 4px rgba(194,106,72,0.25);
+      transform: translate(-50%, -50%);
+      z-index: 2;
+    }
+    #mg-stage .bar-track {
+      position: absolute; left: 18px; right: 18px; top: 50%; height: 22px;
+      background: #efe4d2; border-radius: 99px; transform: translateY(-50%);
+    }
+    #mg-stage .bar-fill {
+      height: 100%; width: 50%; border-radius: 99px;
+      background: linear-gradient(90deg, var(--sage), #8fa96e);
+    }
+    #mg-stage .bar-label {
+      position: absolute; left: 0; right: 0; top: 22%;
+      text-align: center; font-size: 2.2rem; pointer-events: none;
+    }
+    #mg-stage .hint-tap {
+      position: absolute; left: 0; right: 0; bottom: 10px;
+      text-align: center; font-size: 0.75rem; color: var(--ink-soft);
+      pointer-events: none;
+    }
+    #mg-stage.balance .half {
+      position: absolute; top: 0; bottom: 0; width: 50%;
+    }
+    #mg-stage.balance .half.left { left: 0; }
+    #mg-stage.balance .half.right { right: 0; }
+    #mg-stage .beam {
+      position: absolute; left: 10%; right: 10%; top: 50%; height: 10px;
+      background: linear-gradient(180deg, #d9b080, #b88962);
+      border-radius: 4px; transform: translateY(-50%);
+    }
+    #mg-stage .yogi {
+      position: absolute; top: 22%; font-size: 2.6rem;
+      transform: translate(-50%, 0);
+      filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
+      pointer-events: none;
+    }
+    #mg-stage .breath {
+      position: absolute; left: 50%; top: 50%;
+      width: 40px; height: 40px; border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #f7e7c8, #c26a48 70%);
+      transform: translate(-50%, -50%) scale(1);
+      box-shadow: 0 0 0 6px rgba(194,106,72,0.15);
+    }
+    #mg-stage .breath-ring {
+      position: absolute; left: 50%; top: 50%;
+      width: 120px; height: 120px; border-radius: 50%;
+      border: 3px dashed var(--sage);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    .mg-actions { display: flex; gap: 8px; }
+    .mg-actions button {
+      flex: 1; min-height: 44px; border-radius: 10px;
+      background: var(--sage); color: #fff; font: inherit; font-weight: 700;
+    }
+    .mg-actions button.ghost { background: transparent; color: var(--ink); border: 1.5px solid rgba(58,42,34,0.25); }
+    @media (orientation: landscape) and (max-height: 520px) {
+      #app {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-rows: auto auto minmax(0, 1fr);
+        max-width: none;
+        padding-bottom: var(--safe-b);
+        height: 100dvh; height: 100svh;
+        max-height: 100dvh; max-height: 100svh;
+      }
+      #hud { grid-column: 1 / -1; grid-row: 1; width: auto; }
+      #class-bar { grid-column: 1 / -1; grid-row: 2; }
+      #board-wrap {
+        grid-column: 1; grid-row: 3;
+        min-height: 0; min-width: 0;
+        height: auto;
+      }
+      #sheet {
+        grid-column: 2; grid-row: 3;
+        width: min(240px, 38vw);
+        max-height: none;
+        height: auto;
+        align-self: stretch;
+        border-radius: 14px 0 0 0;
+        border-top: 0;
+        border-left: 2px solid rgba(58,42,34,0.12);
+        padding-bottom: 0;
+        min-height: 0;
+      }
+      #sheet.collapsed { width: min(200px, 36vw); }
+      #sheet.open { width: min(300px, 46vw); }
+      #sheet.open #sheet-body { display: block; max-height: none; overflow: auto; }
+    }
+    @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+    @keyframes posePop { 0%{transform:scale(1)} 35%{transform:scale(1.28) rotate(-8deg)} 70%{transform:scale(1.12) rotate(4deg)} 100%{transform:scale(1)} }
+    @keyframes floatUp { 0%{opacity:1;transform:translate(-50%,0)} 100%{opacity:0;transform:translate(-50%,-40px)} }
+    @keyframes cellPulse { 0%{box-shadow:inset 0 0 0 0 rgba(255,220,80,0.9)} 100%{box-shadow:inset 0 0 0 12px rgba(255,220,80,0)} }
+    @keyframes ripple { 0%{opacity:1;transform:translate(-50%,-50%) scale(0.15)} 100%{opacity:0;transform:translate(-50%,-50%) scale(2.8)} }
+  </style>
+</head>
+<body>
+  <div id="app" data-version="1" data-game="yoga-mogul">
+    <header id="hud">
+      <h1>🧘 <span>Yoga Mogul</span></h1>
+      <div class="hud-stats">
+        <div id="cash-line">$<span id="cash">0</span> <span class="unit">cash</span></div>
+        <div class="substats">
+          <span>Zen <span id="zen">1.0×</span></span>
+          <span>Eff <span id="eff">—</span></span>
+          <span id="class-rate">$0/class</span>
+          <span id="loc-name">Neighborhood</span>
+        </div>
+      </div>
+      <button type="button" class="icon-btn" id="btn-menu" aria-label="Studio and options">☰</button>
+    </header>
+    <div id="class-bar" aria-hidden="true"><span id="class-fill"></span></div>
+    <div id="board-wrap">
+      <div id="board" aria-label="Neighborhood studio floor"></div>
+      <div id="fx-layer"></div>
+      <div id="floats"></div>
+      <div id="ghost"></div>
+      <div id="hint">A quiet neighborhood studio. Classes fill the mats.</div>
+    </div>
+    <div id="sheet" class="collapsed">
+      <div id="tip">
+        <b>Welcome to your first studio.</b>
+        Classes fill mats and pay cash; zen from your floor plan multiplies the take. Your yogi runs the room, earns XP from every class, and can train in a short minigame. Open Crew in the tray to assign slots and recruit. Select a shop item to preview its range, then tap a tile twice (or Place here) to buy. Drag or tap-then-tap to move — it's free.
+        <div class="row"><button type="button" data-act="gotit">Let's stretch</button></div>
+      </div>
+      <div id="tasks"></div>
+      <div id="sel-bar">
+        <div id="sel-info">Selected</div>
+        <button type="button" data-act="place" id="btn-place" hidden>Place here</button>
+        <button type="button" data-act="flow" id="btn-flow" hidden>Flow</button>
+        <button type="button" data-act="train" id="btn-train" hidden>Train</button>
+        <button type="button" data-act="repair" id="btn-repair" hidden>Repair</button>
+        <button type="button" data-act="store" id="btn-store">Store</button>
+        <button type="button" data-act="sell" class="warn">Sell</button>
+        <button type="button" data-act="deselect" class="ghost" aria-label="Deselect">×</button>
+      </div>
+      <button type="button" id="sheet-handle" aria-label="Expand or collapse shop"></button>
+      <div id="sheet-strip"></div>
+      <div id="sheet-body">
+        <nav id="tabs">
+          <button type="button" data-tab="crew" class="on">Crew</button>
+          <button type="button" data-tab="upgrades">Upgrades</button>
+          <button type="button" data-tab="studio">Studio</button>
+        </nav>
+        <div id="panel-crew" class="panel on"></div>
+        <div id="panel-upgrades" class="panel"></div>
+        <div id="panel-studio" class="panel"></div>
+      </div>
+    </div>
+    <div id="minigame" aria-modal="true" role="dialog" aria-labelledby="mg-title">
+      <div class="mg-card">
+        <div class="mg-head"><b id="mg-title">Train</b><span id="mg-time">20s</span></div>
+        <p id="mg-desc"></p>
+        <div id="mg-stage"></div>
+        <div id="mg-score"></div>
+        <div class="mg-actions">
+          <button type="button" id="mg-cancel" class="ghost">Leave</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+  (() => {
+    const $ = (id) => document.getElementById(id);
+    const COLS = 6, ROWS = 6;
+    const SAVE_KEY = "yoga-mogul-save-v1";
+    const CLASS_MS = 12000;
+    const CLASS_GAP = 800;
+    const TASK_MS = 55000;
+    const OVERDUE_MS = 40000;
+    const STAFF_REPAIR_MS = 8000;
+    const TRAIN_COOL_MS = 25000;
+    const MG_MS = 18000;
+    const DIRS4 = [[-1,0],[1,0],[0,-1],[0,1]];
+    const DIAG = [[-1,-1],[-1,1],[1,-1],[1,1]];
+    const STUDENTS = ["🧘","🧘‍♀️","🙇‍♂️","🙆","🧎","🧘‍♂️"];
+
+    const ITEMS = {
+      mat:      { kind:"equip", name:"Yoga mat", emoji:"🧘",
+                  desc:"A filled seat. Classes pay for every student on a mat. Upgradable.",
+                  cost:12, growth:1.28, unlock:0, shape:"tile" },
+      plant:    { kind:"equip", name:"Potted plant", emoji:"🪴",
+                  desc:"×1.22 calm to the 4 adjacent tiles. Cheap early boost.",
+                  cost:16, growth:1.4, unlock:0, shape:"adj4", mult:1.22 },
+      incense:  { kind:"equip", name:"Incense", emoji:"🕯️",
+                  desc:"×1.28 zen down the whole row and column.",
+                  cost:32, growth:1.45, unlock:36, shape:"cross", mult:1.28 },
+      speakers: { kind:"equip", name:"Speakers", emoji:"🔊",
+                  desc:"×1.25 music to every seat within 2 tiles.",
+                  cost:48, growth:1.5, unlock:60, shape:"radius2", mult:1.25 },
+      lighting: { kind:"equip", name:"Mood lighting", emoji:"💡",
+                  desc:"×1.22 mood along both diagonals (an X).",
+                  cost:60, growth:1.5, unlock:100, shape:"diag", mult:1.22 },
+      water:    { kind:"equip", name:"Water station", emoji:"💧",
+                  desc:"×1.32 recovery to adjacent seats. Juniper loves this.",
+                  cost:80, growth:1.5, unlock:140, shape:"adj4", mult:1.32, yinBonus:true },
+      desk:     { kind:"equip", name:"Reception desk", emoji:"🛎️",
+                  desc:"Enables bookings and a small studio-wide ticket bump. One per studio. Can be moved, not sold.",
+                  cost:0, growth:1, unlock:0, shape:"global", unique:true, unsellable:true, mult:1.08 },
+    };
+    const SHOP_ORDER = ["mat","plant","incense","speakers","lighting","water"];
+
+    const TRAINERS = {
+      priya: {
+        name:"Priya “Namaste Anyway” Kapoor", short:"Priya", emoji:"🧘‍♀️",
+        title:"Vinyasa Pollyanna",
+        desc:"Blesses the parking meter on her way in and never met a sun salute she didn’t like. Wants a tidy row of mats.",
+        specialty:"vinyasa", shape:"adj4", auraMult:1.15, baseMult:1.0, lineCombo:1.2,
+        minigame:"balance", minigameName:"Tree Pose",
+        minigameDesc:"The room tilts. Tap the left or right half to lean and keep Priya in the glowing middle.",
+        recruitCost:0, unlock:0,
+      },
+      brick: {
+        name:"Brick “Feel the Burn” Delgado", short:"Brick", emoji:"💪",
+        title:"Power Yoga Linebacker",
+        desc:"Ex-linebacker who counts breaths like bench-press reps. High output, zero interest in partner poses — drop him in and stand back.",
+        specialty:"power", shape:"radius1", auraMult:1.1, baseMult:1.28,
+        minigame:"plank", minigameName:"Power Plank",
+        minigameDesc:"Tap to keep the plank bar in the green. Too soft and he drops; too wild and he face-plants.",
+        recruitCost:70, unlock:40,
+      },
+      juniper: {
+        name:"Juniper “Soft Landing” Vale", short:"Juniper", emoji:"🌿",
+        title:"Yin Whisperer",
+        desc:"Moves in geologic time and greets your houseplants by name. Pairs with greenery and the water station.",
+        specialty:"yin", shape:"radius1", auraMult:1.2, baseMult:0.95, plantSynergy:1.16,
+        minigame:"breath", minigameName:"Ocean Breath",
+        minigameDesc:"The circle swells and fades. Tap when it kisses the ring — inhale at the big peak, exhale at the small one.",
+        recruitCost:110, unlock:90,
+      },
+    };
+    const HIRE_ORDER = ["priya","brick","juniper"];
+    const LOCKED_CREW = [
+      { id:"goatyogi", emoji:"🐐", name:"Goat Yogi", title:"The goat does the yoga",
+        desc:"Mid-game unlock. The goat does the poses — you just keep the mats out of chewing range.", hint:"Coming mid-game" },
+      { id:"sweatpete", emoji:"🥵", name:"???", title:"Hot yoga specialist",
+        desc:"Always dripping, never late. Unlocks with a later themed studio.", hint:"Unlocks with Hot Yoga" },
+      { id:"aria", emoji:"🤸", name:"???", title:"Aerialist",
+        desc:"Needs a hammock tile and a higher ceiling than this neighborhood lot.", hint:"A later unlock" },
+    ];
+
+    const UPGRADES = {
+      tickets: { name:"Nicer tickets", desc:"Charge a little more for a better class.",
+                 costs:[40,120,300], labels:["$6 tickets","$9 tickets","$13 tickets"], ico:"🎟️" },
+      mats:    { name:"Premium mats", desc:"Thicker mats, happier seats.",
+                 costs:[50,160], labels:["1.4× seats","1.8× seats"], ico:"🧺" },
+      offline: { name:"Front-desk hours", desc:"Longer offline class cap.",
+                 costs:[70,200], labels:["1 hour cap","2 hour cap"], ico:"⏰" },
+      slots:   { name:"Extra trainer slot", desc:"Make room for one more yogi on the floor.",
+                 costs:[150], labels:["3 studio slots"], ico:"⭐" },
+    };
+    const TASKS = {
+      mats:  { name:"Roll the mats", emoji:"🧺", detail:"A tidy roll keeps the fabric from tearing." },
+      water: { name:"Restock water", emoji:"💧", detail:"Thirsty plants wilt and students slip out early." },
+      tidy:  { name:"Tidy the studio", emoji:"✨", detail:"Dust and crumbs invite pests — and the playlist dies." },
+    };
+
+    function EMPTY() { return { equip:null, trainerId:null }; }
+    function blankGrid() { return Array.from({length:ROWS}, () => Array.from({length:COLS}, EMPTY)); }
+    function defaultBought() { return { mat:1, plant:0, incense:0, speakers:0, lighting:0, water:0 }; }
+
+    function freshState() {
+      const grid = blankGrid();
+      const now = Date.now();
+      grid[5][2].equip = { type:"desk", paid:0, mishap:null };
+      grid[2][2].equip = { type:"mat", paid:0, mishap:null };
+      grid[2][3].trainerId = 1;
+      return {
+        cash:24, totalEarned:0, grid, bought: defaultBought(),
+        upg:{ tickets:0, mats:0, offline:0, slots:0 },
+        roster:[{ id:1, type:"priya", level:1, xp:0, slotted:true, flowUntil:0, paid:0, trainCoolUntil:0 }],
+        nextTrainerId:2, trainerSlots:2, staff:false, muted:false, seenHelp:false, stored:[],
+        lastSave: now, classStart: now, classEnds: now + CLASS_MS, inClass:true, seated:[],
+        tasks:{
+          mats:{ dueAt: now + TASK_MS, overdue:false },
+          water:{ dueAt: now + TASK_MS + 8000, overdue:false },
+          tidy:{ dueAt: now + TASK_MS + 16000, overdue:false },
+        },
+        pests:false, nextNoshow:false, staffFixAt:0, version:1,
+      };
+    }
+
+    let state = freshState();
+    let selected = null;
+    let holding = null;
+    let placeTarget = null;
+    let hoverCell = null;
+    let currentTab = "crew";
+    let lastTick = performance.now();
+    let lastFloat = 0;
+    let drag = null;
+    let audioCtx = null;
+    let hiddenAt = 0;
+    let pendingOfflineHint = null;
+    let confirmKind = null;
+    let minigame = null;
+    let classPausedAt = 0;
+
+    const boardEl = () => $("board");
+    function inBounds(r,c) { return r>=0 && c>=0 && r<ROWS && c<COLS; }
+    function ticketPrice() { return [4, 6, 9, 13][state.upg.tickets] || 4; }
+    function matQuality() { return [1, 1.4, 1.8][state.upg.mats] || 1; }
+    function offlineHours() { return [20/60, 1, 2][state.upg.offline] || (20/60); }
+    function slotCap() { return 2 + (state.upg.slots || 0); }
+    function itemCost(type) {
+      const it = ITEMS[type];
+      return Math.ceil(it.cost * Math.pow(it.growth, state.bought[type] || 0));
+    }
+    function unlocked(type) { return state.totalEarned + state.cash >= ITEMS[type].unlock; }
+    function trainerDef(tr) { return TRAINERS[typeof tr === "string" ? tr : tr.type]; }
+    function findTrainer(id) { return state.roster.find(t => t.id === id) || null; }
+    function trainerAt(r,c, grid) {
+      grid = grid || state.grid;
+      const id = grid[r][c].trainerId;
+      return id ? findTrainer(id) : null;
+    }
+    function slottedTrainers() { return state.roster.filter(t => t.slotted); }
+    function hiredTypes() { return new Set(state.roster.map(t => t.type)); }
+    function xpNeeded(level) { return Math.round(28 * Math.pow(1.75, Math.max(0, level - 1))); }
+    function trainerBonuses(tr) {
+      const def = trainerDef(tr);
+      const lv = Math.max(1, tr.level || 1) - 1;
+      return { base: def.baseMult * (1 + 0.12 * lv), aura: def.auraMult * (1 + 0.04 * lv) };
+    }
+
+    function cloneGrid(grid) {
+      return grid.map(row => row.map(cell => ({
+        trainerId: cell.trainerId || null,
+        equip: cell.equip ? Object.assign({}, cell.equip) : null,
+      })));
+    }
+
+    function affectedTiles(type, r, c) {
+      const out = [];
+      const it = ITEMS[type] || TRAINERS[type];
+      if (!it) return out;
+      const shape = it.shape;
+      if (shape === "adj4" || shape === "radius1") {
+        const maxd = shape === "radius1" ? 1 : 1;
+        if (shape === "adj4") {
+          for (const [dr,dc] of DIRS4) {
+            const rr=r+dr, cc=c+dc;
+            if (inBounds(rr,cc)) out.push([rr,cc]);
+          }
+        } else {
+          for (let rr=0; rr<ROWS; rr++) for (let cc=0; cc<COLS; cc++) {
+            const d = Math.max(Math.abs(rr-r), Math.abs(cc-c));
+            if (d>=1 && d<=maxd) out.push([rr,cc]);
+          }
+        }
+      } else if (shape === "cross") {
+        for (let cc=0; cc<COLS; cc++) if (cc!==c) out.push([r,cc]);
+        for (let rr=0; rr<ROWS; rr++) if (rr!==r) out.push([rr,c]);
+      } else if (shape === "diag") {
+        for (const [dr,dc] of DIAG) {
+          let rr=r+dr, cc=c+dc;
+          while (inBounds(rr,cc)) { out.push([rr,cc]); rr+=dr; cc+=dc; }
+        }
+      } else if (shape === "radius2") {
+        for (let rr=0; rr<ROWS; rr++) for (let cc=0; cc<COLS; cc++) {
+          const d = Math.max(Math.abs(rr-r), Math.abs(cc-c));
+          if (d>=1 && d<=2) out.push([rr,cc]);
+        }
+      } else if (shape === "global") {
+        for (let rr=0; rr<ROWS; rr++) for (let cc=0; cc<COLS; cc++) {
+          if (rr!==r || cc!==c) out.push([rr,cc]);
+        }
+      }
+      return out;
+    }
+
+    function hlClass(type) {
+      const s = (ITEMS[type] || TRAINERS[type] || {}).shape;
+      return s==="adj4" ? "hl-adj" : s==="cross" ? "hl-cross" : s==="diag" ? "hl-diag"
+        : (s==="radius2" || s==="radius1") ? "hl-rad" : s==="global" ? "hl-adj" : "";
+    }
+
+    function rangeText(type) {
+      const it = ITEMS[type] || TRAINERS[type];
+      if (!it) return "";
+      if (TRAINERS[type]) {
+        const extra = it.specialty==="vinyasa" ? " A line of 3+ mats in her row or column gets a chain bonus."
+          : it.specialty==="yin" ? " Mats that also sit by a plant or water station get a synergy bonus."
+          : it.specialty==="power" ? " No partner bonus — just a strong personal multiplier."
+          : "";
+        switch (it.shape) {
+          case "adj4": return "Aura: the 4 adjacent tiles." + extra;
+          case "radius1": return "Aura: every tile 1 step away." + extra;
+          default: return extra.trim();
+        }
+      }
+      switch (it.shape) {
+        case "adj4": return "Range: the 4 adjacent tiles (up, down, left, right).";
+        case "cross": return "Range: the entire row and column (a +).";
+        case "diag": return "Range: both diagonals from this tile (an X).";
+        case "radius2": return "Range: every tile within 2 steps.";
+        case "radius1": return "Range: every tile 1 step away.";
+        case "tile": return "Occupies this tile. Students sit here during class.";
+        case "global": return "Studio-wide booking bump. One desk per studio.";
+        default: return "";
+      }
+    }
+
+    function canPlace(type, kind, r, c, grid) {
+      grid = grid || state.grid;
+      if (!inBounds(r,c)) return false;
+      const cell = grid[r][c];
+      return !cell.equip && !cell.trainerId;
+    }
+
+    function defaultRole(cell) {
+      if (cell.trainerId) return "trainer";
+      if (cell.equip) return "equip";
+      return null;
+    }
+
+    function legalCell(cell) {
+      if (cell.trainerId && cell.equip) return false;
+      return true;
+    }
+
+    function tryMove(fr, fc, tr, tc) {
+      if (fr===tr && fc===tc) return false;
+      if (!inBounds(tr,tc) || !inBounds(fr,fc)) return false;
+      const src = state.grid[fr][fc];
+      const dst = state.grid[tr][tc];
+      if (!src.equip && !src.trainerId) return false;
+      // Swap entire cell contents (desk included). Never leave a trainer stacked on furniture.
+      const sEq = src.equip, sTr = src.trainerId;
+      const dEq = dst.equip, dTr = dst.trainerId;
+      const srcWould = { equip:dEq, trainerId:dTr };
+      const dstWould = { equip:sEq, trainerId:sTr };
+      if (!legalCell(srcWould) || !legalCell(dstWould)) return false;
+      src.equip = dEq; src.trainerId = dTr;
+      dst.equip = sEq; dst.trainerId = sTr;
+      return true;
+    }
+
+    function occupied(cell) { return !!(cell && (cell.equip || cell.trainerId)); }
+
+    function samplePreviewTile() {
+      const guesses = [[2,2],[2,3],[3,2],[2,1],[3,3],[1,2],[4,2],[3,1]];
+      const type = holding && holding.type, kind = holding && holding.kind;
+      for (const [r,c] of guesses) {
+        if (holding && canPlace(type, kind, r, c)) return { r, c };
+      }
+      for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
+        if (holding && canPlace(type, kind, r, c)) return { r, c };
+      }
+      return { r:2, c:2 };
+    }
+
+    function previewAnchor() {
+      if (hoverCell) return { r: hoverCell.r, c: hoverCell.c, sample:false };
+      if (placeTarget) return { r: placeTarget.r, c: placeTarget.c, sample:false };
+      if (holding) {
+        const s = samplePreviewTile();
+        return { r:s.r, c:s.c, sample:true };
+      }
+      return null;
+    }
+
+    function findEquip(type, grid) {
+      grid = grid || state.grid;
+      const out = [];
+      for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
+        if (grid[r][c].equip && grid[r][c].equip.type === type) out.push({ r, c, equip: grid[r][c].equip });
+      }
+      return out;
+    }
+
+    function findTrainerPos(id, grid) {
+      grid = grid || state.grid;
+      for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
+        if (grid[r][c].trainerId === id) return { r, c };
+      }
+      return null;
+    }
+
+    function listMats(grid) {
+      return findEquip("mat", grid);
+    }
+
+    function plantsHealthy(grid, r, c) {
+      const cell = grid[r][c];
+      if (!cell.equip || (cell.equip.type !== "plant" && cell.equip.type !== "water")) return false;
+      return cell.equip.mishap !== "wilted";
+    }
+
+    function seatMultiplier(grid, r, c) {
+      const cell = grid[r][c];
+      if (!cell.equip || cell.equip.type !== "mat") return 0;
+      let m = matQuality();
+      if (cell.equip.mishap === "torn") m *= 0.7;
+      // furniture auras
+      for (let rr=0; rr<ROWS; rr++) for (let cc=0; cc<COLS; cc++) {
+        const eq = grid[rr][cc].equip;
+        if (!eq) continue;
+        const it = ITEMS[eq.type];
+        if (!it || !it.mult || it.shape === "global") continue;
+        if (eq.type === "plant" && eq.mishap === "wilted") continue;
+        if (eq.type === "speakers" && eq.mishap === "blown") continue;
+        if (eq.type === "lighting" && eq.mishap === "dark") continue;
+        const hit = affectedTiles(eq.type, rr, cc).some(([ar,ac]) => ar===r && ac===c);
+        if (hit) m *= it.mult;
+      }
+      // trainer auras + combos
+      for (const tr of (grid === state.grid ? slottedTrainers() : trainersOnGrid(grid))) {
+        const pos = findTrainerPos(tr.id, grid);
+        if (!pos) continue;
+        const def = trainerDef(tr);
+        const bon = trainerBonuses(tr);
+        const hit = affectedTiles(tr.type, pos.r, pos.c).some(([ar,ac]) => ar===r && ac===c);
+        if (hit) m *= bon.aura;
+        if (def.lineCombo && (pos.r===r || pos.c===c)) {
+          const line = listMats(grid).filter(mt => (pos.r===r ? mt.r===r : mt.c===c));
+          if (line.length >= 3) m *= def.lineCombo;
+        }
+        if (def.plantSynergy && hit) {
+          let near = false;
+          for (const [dr,dc] of DIRS4) {
+            const rr=r+dr, cc=c+dc;
+            if (inBounds(rr,cc) && plantsHealthy(grid, rr, cc)) near = true;
+          }
+          if (near) m *= def.plantSynergy;
+        }
+      }
+      return m;
+    }
+
+    function trainersOnGrid(grid) {
+      const ids = new Set();
+      for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
+        if (grid[r][c].trainerId) ids.add(grid[r][c].trainerId);
+      }
+      return state.roster.filter(t => ids.has(t.id));
+    }
+
+    function deskMult(grid) {
+      grid = grid || state.grid;
+      return findEquip("desk", grid).length ? (ITEMS.desk.mult || 1.08) : 1;
+    }
+
+    function trainerMult(grid) {
+      const list = grid && grid !== state.grid ? trainersOnGrid(grid) : slottedTrainers();
+      if (!list.length) return 0.6;
+      let m = 1;
+      for (const tr of list) {
+        const def = trainerDef(tr);
+        m *= trainerBonuses(tr).base;
+        if (def.specialty === "vinyasa") m *= 1.08;
+      }
+      return m;
+    }
+
+    function rawZen(grid) {
+      grid = grid || state.grid;
+      const mats = listMats(grid);
+      if (!mats.length) return 1;
+      let sum = 0;
+      for (const mt of mats) sum += seatMultiplier(grid, mt.r, mt.c);
+      return sum / mats.length;
+    }
+
+    function healthyPayout(grid, seatedCount) {
+      grid = grid || state.grid;
+      const n = seatedCount == null ? listMats(grid).length : seatedCount;
+      // payout as if no mishaps/pests: temporarily ignore by computing from raw seats * ticket * zenHealthy * trainer
+      // Approximate healthy zen by recomputing without mishaps is expensive; use ticket * n * theoretical.
+      // We'll compute actual vs a cloned healthy grid when needed.
+      const z = rawZen(grid);
+      const t = trainerMult(grid);
+      const d = deskMult(grid);
+      return n * ticketPrice() * z * t * d;
+    }
+
+    function mishapPenalty() {
+      // extra studio-wide bits not in seat math
+      let p = 1;
+      if (state.pests) p *= 0.8;
+      return p;
+    }
+
+    function fillRate() {
+      let f = 0.55;
+      if (slottedTrainers().length) f += 0.3;
+      f += Math.min(0.15, Math.max(0, rawZen() - 1) * 0.2);
+      f += 0.03 * slottedTrainers().reduce((s,t) => s + (t.level-1), 0);
+      if (state.pests) f *= 0.8;
+      if (state.nextNoshow) f *= 0.75;
+      return Math.max(0.4, Math.min(1, f));
+    }
+
+    function classPayout(grid, seated) {
+      grid = grid || state.grid;
+      seated = seated || state.seated;
+      if (!seated.length) return 0;
+      let sum = 0;
+      const t = trainerMult(grid);
+      const d = deskMult(grid);
+      const p = mishapPenalty();
+      for (const s of seated) {
+        sum += ticketPrice() * seatMultiplier(grid, s.r, s.c) * t * d * p;
+      }
+      const healthy = seated.length * ticketPrice() * /*approx*/ Math.max(rawZen(grid), 0.01) * t * d;
+      const floor = 0.4 * healthy;
+      return Math.max(floor, sum);
+    }
+
+    function predictedClassPayout(grid) {
+      grid = grid || state.grid;
+      const mats = listMats(grid);
+      const n = Math.max(mats.length ? 1 : 0, Math.min(mats.length, Math.round(mats.length * fillRate()) || (mats.length && slottedTrainers().length ? 1 : 0)));
+      const seated = mats.slice(0, n);
+      return classPayout(grid, seated);
+    }
+
+    function idealPayout() {
+      const mats = listMats();
+      if (!mats.length) return 0;
+      // every owned furniture aura and trainer aura stacked on every mat (upper bound)
+      let per = matQuality();
+      const counts = {};
+      for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
+        const eq = state.grid[r][c].equip;
+        if (!eq) continue;
+        const it = ITEMS[eq.type];
+        if (it && it.mult && it.shape !== "global") per *= it.mult;
+        counts[eq.type] = (counts[eq.type]||0)+1;
+      }
+      for (const tr of slottedTrainers()) {
+        const def = trainerDef(tr);
+        const bon = trainerBonuses(tr);
+        per *= bon.aura;
+        if (def.lineCombo && mats.length >= 3) per *= def.lineCombo;
+        if (def.plantSynergy && (counts.plant || counts.water)) per *= def.plantSynergy;
+      }
+      const t = trainerMult();
+      const d = deskMult();
+      return mats.length * ticketPrice() * per * t * d;
+    }
+
+    function efficiency() {
+      const ideal = idealPayout();
+      if (!ideal) return 1;
+      const mats = listMats();
+      const actual = classPayout(state.grid, mats); // all-seated layout quality, no fill/pests for fairness
+      return Math.max(0, Math.min(1.5, actual / ideal));
+    }
+
+    function studioZen() {
+      return rawZen();
+    }
+
+    function spend(amt) {
+      if (state.cash < amt) return false;
+      state.cash -= amt;
+      return true;
+    }
+    function earn(amt, at, burst) {
+      if (amt <= 0) return;
+      state.cash += amt;
+      state.totalEarned += amt;
+      if (at) spawnFloat(at.r, at.c, "+$" + fmt(amt), burst);
+    }
+    function fmt(n) {
+      n = Math.round(n * 10) / 10;
+      if (n >= 1000000) return (n/1e6).toFixed(n>=1e7?0:1).replace(/\.0$/,"") + "M";
+      if (n >= 1000) return (n/1000).toFixed(n>=10000?0:1).replace(/\.0$/,"") + "k";
+      if (Math.abs(n - Math.round(n)) < 0.05) return String(Math.round(n));
+      return n.toFixed(1);
+    }
+
+    function setHint(t) { const el=$("hint"); if (el) el.textContent = t || ""; }
+    function hintForBoard() {
+      if (pendingOfflineHint) { setHint(pendingOfflineHint); return; }
+      if (holding) {
+        const name = holdingName();
+        if (placeTarget) {
+          const ok = canPlace(holding.type, holding.kind, placeTarget.r, placeTarget.c);
+          setHint(ok
+            ? ("Aimed at this tile. Tap it again or hit Place here to " + (holding.source==="roster" ? "assign " : "buy the ") + name + ".")
+            : ("That tile is taken. Aim at an empty tile to place " + name + " — nothing is spent yet."));
+        } else if (hoverCell) {
+          setHint("Previewing on this tile. Tap it to aim — nothing is bought until you confirm.");
+        } else {
+          setHint("Sample range shown on the floor. Slide over tiles to preview, then tap one to aim — nothing is bought until you confirm.");
+        }
+        return;
+      }
+      if (selected) {
+        const cell = state.grid[selected.r][selected.c];
+        const tr = trainerAt(selected.r, selected.c);
+        if (tr) setHint(trainerDef(tr).short + " is selected. Drag or tap a tile to move, Train for XP, or Flow for a cash burst.");
+        else if (cell.equip && cell.equip.mishap) setHint("This needs a repair. Tap Repair in the tray — or move it first if you'd rather.");
+        else if (cell.equip) setHint("Selected. Drag or tap a destination to move — it's free. Drop on another item to swap.");
+        return;
+      }
+      const due = dueTasks();
+      if (due.length) setHint("A little upkeep is waiting in the tray. Neglect slows the room down, never shuts it.");
+      else if (state.inClass && state.seated.length) setHint("Class in session. Students have taken their seats.");
+      else setHint("A quiet neighborhood studio. Classes fill the mats.");
+    }
+
+    function holdingName() {
+      if (!holding) return "";
+      if (holding.kind === "trainer") return trainerDef(holding.type).short;
+      return ITEMS[holding.type].name;
+    }
+
+    function afterLayout() {
+      state.trainerSlots = slotCap();
+      renderAll();
+      hintForBoard();
+      save();
+    }
+
+    function spawnFloat(r, c, text, burst) {
+      const board = boardEl();
+      if (!board) return;
+      const cell = board.querySelector('.cell[data-r="'+r+'"][data-c="'+c+'"]');
+      const wrap = $("floats");
+      if (!cell || !wrap) return;
+      const br = board.getBoundingClientRect();
+      const cr = cell.getBoundingClientRect();
+      const el = document.createElement("div");
+      el.className = "floater" + (burst ? " burst" : "");
+      el.textContent = text;
+      el.style.left = (cr.left - br.left + cr.width/2) + "px";
+      el.style.top = (cr.top - br.top) + "px";
+      wrap.appendChild(el);
+      setTimeout(() => el.remove(), 950);
+    }
+    function spawnRipple(r, c) {
+      const board = boardEl();
+      const cell = board && board.querySelector('.cell[data-r="'+r+'"][data-c="'+c+'"]');
+      const fx = $("fx-layer");
+      if (!cell || !fx) return;
+      const br = board.getBoundingClientRect();
+      const cr = cell.getBoundingClientRect();
+      const el = document.createElement("div");
+      el.className = "ripple";
+      el.style.left = (cr.left - br.left + cr.width/2) + "px";
+      el.style.top = (cr.top - br.top + cr.height/2) + "px";
+      el.style.width = el.style.height = Math.max(cr.width, cr.height) + "px";
+      fx.appendChild(el);
+      setTimeout(() => el.remove(), 950);
+    }
+    function flashClass(r, c, cls) {
+      const cell = boardEl().querySelector('.cell[data-r="'+r+'"][data-c="'+c+'"]');
+      if (!cell) return;
+      cell.classList.add(cls);
+      setTimeout(() => cell.classList.remove(cls), 420);
+    }
+    function ensureAudio() {
+      if (state.muted) return;
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC && !audioCtx) audioCtx = new AC();
+        if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+      } catch (e) {}
+    }
+    function blip(freq, dur, type, vol) {
+      if (state.muted || !audioCtx) return;
+      try {
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = type || "sine";
+        o.frequency.value = freq;
+        g.gain.value = vol || 0.05;
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start();
+        g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + (dur||0.08));
+        o.stop(audioCtx.currentTime + (dur||0.08) + 0.02);
+      } catch (e) {}
+    }
+
+    function deselectAll() {
+      holding = null;
+      selected = null;
+      placeTarget = null;
+      hoverCell = null;
+      renderAll();
+      hintForBoard();
+    }
+
+    function placeHeldAt(r, c) {
+      if (!holding) return false;
+      if (!canPlace(holding.type, holding.kind, r, c)) return false;
+      const cell = state.grid[r][c];
+      if (holding.source === "shop") {
+        const cost = itemCost(holding.type);
+        if (state.cash < cost) return false;
+        spend(cost);
+        state.bought[holding.type] = (state.bought[holding.type] || 0) + 1;
+        cell.equip = { type: holding.type, paid: cost, mishap: null };
+      } else if (holding.source === "stored") {
+        const item = holding.item;
+        cell.equip = item.equip;
+        state.stored.splice(holding.storeIndex, 1);
+      } else if (holding.source === "roster") {
+        const tr = findTrainer(holding.trainerId);
+        if (!tr || tr.slotted) return false;
+        if (slottedTrainers().length >= slotCap()) return false;
+        cell.trainerId = tr.id;
+        tr.slotted = true;
+      } else return false;
+      holding = null;
+      placeTarget = null;
+      hoverCell = null;
+      selected = { r, c, role: defaultRole(cell) };
+      blip(520, 0.08, "triangle", 0.05);
+      afterLayout();
+      return true;
+    }
+
+    function moveSelectedTo(r, c) {
+      if (!selected) return false;
+      const ok = tryMove(selected.r, selected.c, r, c);
+      if (ok) {
+        selected = { r, c, role: selected.role || defaultRole(state.grid[r][c]) };
+        afterLayout();
+        blip(440, 0.06, "sine", 0.04);
+      }
+      return ok;
+    }
+
+    function storeSelected() {
+      if (!selected) return false;
+      const cell = state.grid[selected.r][selected.c];
+      const role = selected.role || defaultRole(cell);
+      if (role === "trainer" && cell.trainerId) {
+        benchTrainer(cell.trainerId);
+        return true;
+      }
+      if (role === "equip" && cell.equip) {
+        if (ITEMS[cell.equip.type] && ITEMS[cell.equip.type].unsellable) {
+          setHint("The reception desk stays in the studio. You can move it, but you can't box it up.");
+          return false;
+        }
+        state.stored.push({ equip: cell.equip });
+        cell.equip = null;
+        selected = null;
+        afterLayout();
+        blip(360, 0.06, "sine", 0.04);
+        setHint("Stored in the tray. Select it there when you want it back on the floor.");
+        return true;
+      }
+      return false;
+    }
+
+    function sellSelected() {
+      if (!selected) return false;
+      const cell = state.grid[selected.r][selected.c];
+      if (cell.trainerId) {
+        setHint("Yogis stay on your crew. Bench them to free a slot — don't sell them.");
+        return false;
+      }
+      if (!cell.equip) return false;
+      if (ITEMS[cell.equip.type] && ITEMS[cell.equip.type].unsellable) {
+        setHint("The reception desk isn't for sale.");
+        return false;
+      }
+      const refund = Math.floor((cell.equip.paid || itemCost(cell.equip.type) / 2) * 0.5);
+      cell.equip = null;
+      state.cash += refund;
+      selected = null;
+      blip(300, 0.08, "square", 0.04);
+      afterLayout();
+      setHint("Sold for $" + fmt(refund) + ".");
+      return true;
+    }
+
+    function confirmPlace() {
+      if (!holding || !placeTarget) return false;
+      const ok = placeHeldAt(placeTarget.r, placeTarget.c);
+      if (!ok) {
+        flashClass(placeTarget.r, placeTarget.c, "invalid");
+        setHint("Can't place that there. Everything needs its own empty tile. Nothing was bought.");
+        blip(180, 0.1, "square", 0.03);
+      }
+      return ok;
+    }
+
+    function onCellTap(r, c) {
+      if (holding) {
+        if (placeTarget && placeTarget.r===r && placeTarget.c===c) {
+          confirmPlace();
+          return;
+        }
+        placeTarget = { r, c };
+        hoverCell = { r, c };
+        if (!canPlace(holding.type, holding.kind, r, c)) {
+          flashClass(r,c,"invalid");
+          blip(180, 0.1, "square", 0.03);
+        }
+        renderAll();
+        hintForBoard();
+        return;
+      }
+      const cell = state.grid[r][c];
+      if (selected && selected.r===r && selected.c===c) {
+        deselectAll();
+        return;
+      }
+      if (selected && (selected.r!==r || selected.c!==c)) {
+        const ok = moveSelectedTo(r, c);
+        if (ok) return;
+        if (occupied(cell)) {
+          selected = { r, c, role: defaultRole(cell) };
+          renderAll();
+          hintForBoard();
+          return;
+        }
+        flashClass(r,c,"invalid");
+        setHint("Can't move there. Try an empty tile, or drop onto another item to swap.");
+        return;
+      }
+      if (occupied(cell)) {
+        selected = { r, c, role: defaultRole(cell) };
+        renderAll();
+        hintForBoard();
+        return;
+      }
+      deselectAll();
+    }
+
+    function startClass(now) {
+      now = now || Date.now();
+      const mats = listMats();
+      let n = Math.round(mats.length * fillRate());
+      if (mats.length && slottedTrainers().length && n < 1 && fillRate() >= 0.4) n = 1;
+      n = Math.max(0, Math.min(mats.length, n));
+      state.seated = mats.slice(0, n).map((m,i) => ({ r:m.r, c:m.c, emoji: STUDENTS[(i + (now|0)) % STUDENTS.length] }));
+      if (state.nextNoshow) state.nextNoshow = false;
+      state.inClass = true;
+      state.classStart = now;
+      state.classEnds = now + CLASS_MS;
+      renderBoard();
+      renderHeader();
+    }
+
+    function finishClass() {
+      const pay = Math.round(classPayout() * 10) / 10;
+      const cut = state.staff ? Math.floor(pay * 0.08) : 0;
+      const got = Math.max(0, pay - cut);
+      const at = state.seated[0] || { r:2, c:2 };
+      if (got > 0) {
+        earn(got, at, false);
+        blip(660, 0.07, "sine", 0.05);
+      }
+      grantClassXp();
+      state.inClass = false;
+      state.seated = [];
+      const now = Date.now();
+      state.classStart = now;
+      state.classEnds = now + CLASS_GAP;
+      renderAll();
+    }
+
+    function grantClassXp() {
+      const seats = state.seated.length;
+      const amt = 4 + seats * 2;
+      for (const tr of slottedTrainers()) {
+        const def = trainerDef(tr);
+        let xp = amt;
+        if (def.specialty === "vinyasa") xp += 1;
+        grantXp(tr, xp, true);
+      }
+    }
+
+    function grantXp(tr, amt, silent) {
+      if (!tr || !amt) return { leveled:false, amt:0 };
+      tr.xp += amt;
+      let leveled = false;
+      while (tr.level < 6 && tr.xp >= xpNeeded(tr.level)) {
+        tr.xp -= xpNeeded(tr.level);
+        tr.level += 1;
+        leveled = true;
+      }
+      if (tr.level >= 6) tr.xp = 0;
+      if (leveled && !silent) {
+        setHint(trainerDef(tr).short + " reached level " + tr.level + "!");
+        blip(720, 0.12, "triangle", 0.07);
+      } else if (!silent && amt) {
+        setHint(trainerDef(tr).short + " trained for +" + Math.round(amt) + " XP.");
+      }
+      return { leveled, amt };
+    }
+
+    function tryFlow(r, c) {
+      const tr = trainerAt(r, c);
+      if (!tr) return false;
+      const now = Date.now();
+      if (tr.flowUntil && now < tr.flowUntil - 200) return false;
+      const base = Math.max(ticketPrice(), predictedClassPayout() * 0.35);
+      const amt = Math.round(base * (1 + 0.15 * (tr.level-1)) * 10) / 10;
+      tr.flowUntil = now + 800;
+      earn(amt, {r,c}, true);
+      spawnRipple(r, c);
+      blip(620, 0.07, "sine", 0.05);
+      renderBoard();
+      renderHeader();
+      return true;
+    }
+
+    function dueTasks() {
+      const now = Date.now();
+      const out = [];
+      for (const id of Object.keys(TASKS)) {
+        const t = state.tasks[id];
+        if (!t) continue;
+        if (now >= t.dueAt) out.push(id);
+      }
+      if (state.pests) out.push("pests");
+      return out;
+    }
+
+    function completeTask(id) {
+      if (id === "pests") {
+        state.pests = false;
+        afterLayout();
+        setHint("Pests cleared. The room can breathe again.");
+        blip(500, 0.06, "sine", 0.04);
+        return true;
+      }
+      const t = state.tasks[id];
+      if (!t) return false;
+      t.dueAt = Date.now() + TASK_MS;
+      t.overdue = false;
+      afterLayout();
+      setHint(TASKS[id].name + " — done. The studio stays healthy.");
+      blip(500, 0.06, "sine", 0.04);
+      return true;
+    }
+
+    function spawnMishap(fromTask) {
+      if (fromTask === "mats") {
+        const mats = listMats().filter(m => m.equip.mishap !== "torn");
+        if (!mats.length) return;
+        const m = mats[Math.floor(Math.random()*mats.length)];
+        m.equip.mishap = "torn";
+        setHint("A mat tore at the corner. Tap it and hit Repair.");
+      } else if (fromTask === "water") {
+        const plants = findEquip("plant").filter(p => p.equip.mishap !== "wilted");
+        if (plants.length) {
+          for (const p of plants) p.equip.mishap = "wilted";
+          setHint("The plants wilted. Tap one and Repair — or restock water next time.");
+        } else {
+          state.nextNoshow = true;
+          setHint("The water ran out. The next class may have a few no-shows.");
+        }
+      } else if (fromTask === "tidy") {
+        const speakers = findEquip("speakers").filter(s => s.equip.mishap !== "blown");
+        if (speakers.length && Math.random() < 0.5) {
+          speakers[0].equip.mishap = "blown";
+          setHint("The speakers blew a fuse. Tap them and Repair.");
+        } else {
+          state.pests = true;
+          setHint("Ants found the snack shelf. Clear pests from the tray.");
+        }
+      }
+    }
+
+    function repairAt(r, c) {
+      const cell = state.grid[r][c];
+      if (!cell.equip || !cell.equip.mishap) return false;
+      const kind = cell.equip.mishap;
+      if (kind === "wilted") {
+        for (const p of findEquip("plant")) p.equip.mishap = null;
+      } else {
+        cell.equip.mishap = null;
+      }
+      blip(500, 0.06, "triangle", 0.04);
+      afterLayout();
+      setHint("Fixed. The room picks back up.");
+      return true;
+    }
+
+    function tickMaintenance(now) {
+      for (const id of Object.keys(TASKS)) {
+        const t = state.tasks[id];
+        if (!t) continue;
+        if (state.staff) {
+          if (now >= t.dueAt) t.dueAt = now + TASK_MS;
+          t.overdue = false;
+          continue;
+        }
+        if (now >= t.dueAt + OVERDUE_MS) {
+          if (!t.overdue) {
+            t.overdue = true;
+            spawnMishap(id);
+          }
+          // Keep dueAt in the past so the tray chip stays until the player (or staff) completes it.
+        }
+      }
+      if (state.staff) {
+        if (state.pests) state.pests = false;
+        if (!state.staffFixAt) state.staffFixAt = now + STAFF_REPAIR_MS;
+        if (now >= state.staffFixAt) {
+          let fixed = false;
+          for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
+            const eq = state.grid[r][c].equip;
+            if (eq && eq.mishap) { eq.mishap = null; fixed = true; }
+          }
+          state.staffFixAt = now + STAFF_REPAIR_MS;
+          if (fixed) setHint("Staff quietly fixed a mishap.");
+        }
+      }
+    }
+
+    function hireStaff() {
+      const cost = 100;
+      if (state.staff) {
+        state.staff = false;
+        afterLayout();
+        setHint("Staff let go. You'll handle the to-dos yourself.");
+        return true;
+      }
+      if (!spend(cost)) { setHint("Need $100 to hire a studio attendant."); return false; }
+      state.staff = true;
+      for (const id of Object.keys(TASKS)) {
+        state.tasks[id].dueAt = Date.now() + TASK_MS;
+        state.tasks[id].overdue = false;
+      }
+      afterLayout();
+      setHint("Attendant hired. They handle daily tasks for 8% of each class.");
+      return true;
+    }
+
+    function recruitTrainer(type) {
+      const def = TRAINERS[type];
+      if (!def) return false;
+      if (hiredTypes().has(type)) { setHint("Already on the crew."); return false; }
+      if (state.totalEarned + state.cash < def.unlock) return false;
+      if (!spend(def.recruitCost)) { setHint("Need $" + def.recruitCost + " to recruit " + def.short + "."); return false; }
+      const tr = { id: state.nextTrainerId++, type, level:1, xp:0, slotted:false, flowUntil:0, paid:def.recruitCost, trainCoolUntil:0 };
+      state.roster.push(tr);
+      afterLayout();
+      openSheet();
+      currentTab = "crew";
+      setHint(def.short + " joined the crew. Assign them to a free studio slot, then place them on the floor.");
+      blip(600, 0.1, "triangle", 0.06);
+      return true;
+    }
+
+    function assignTrainer(id) {
+      const tr = findTrainer(id);
+      if (!tr) return false;
+      if (tr.slotted) { setHint("Already teaching. Select them on the floor to move or bench."); return false; }
+      if (slottedTrainers().length >= slotCap()) {
+        setHint("No free slots. Bench someone, or buy an extra slot in Upgrades.");
+        return false;
+      }
+      deselectAll();
+      holding = { source:"roster", kind:"trainer", type:tr.type, trainerId:tr.id };
+      placeTarget = null;
+      closeSheetToCollapsed();
+      renderAll();
+      hintForBoard();
+      return true;
+    }
+
+    function benchTrainer(id) {
+      const tr = findTrainer(id);
+      if (!tr || !tr.slotted) return false;
+      const pos = findTrainerPos(id);
+      if (pos) state.grid[pos.r][pos.c].trainerId = null;
+      tr.slotted = false;
+      if (selected && pos && selected.r===pos.r && selected.c===pos.c) selected = null;
+      if (holding && holding.trainerId === id) holding = null;
+      afterLayout();
+      setHint(trainerDef(tr).short + " is back on the bench. The slot is free.");
+      return true;
+    }
+
+    /* ---------- minigames ---------- */
+    function pauseClasses() {
+      if (classPausedAt) return;
+      classPausedAt = Date.now();
+    }
+    function resumeClasses() {
+      if (!classPausedAt) return;
+      const dt = Date.now() - classPausedAt;
+      state.classStart += dt;
+      state.classEnds += dt;
+      classPausedAt = 0;
+    }
+
+    function startMinigame(trainerId) {
+      if (minigame) return false;
+      const tr = findTrainer(trainerId);
+      if (!tr) return false;
+      const now = Date.now();
+      if (tr.trainCoolUntil && now < tr.trainCoolUntil) {
+        const s = Math.ceil((tr.trainCoolUntil - now)/1000);
+        setHint(trainerDef(tr).short + " is still catching their breath (" + s + "s).");
+        return false;
+      }
+      const def = trainerDef(tr);
+      ensureAudio();
+      pauseClasses();
+      minigame = {
+        type: def.minigame, trainerId: tr.id, t0: performance.now(), dur: MG_MS,
+        inZone:0, samples:0, done:false, result:null,
+        x:0.5, v:0, plank:0.55,
+        breathT:0, breathHits:0, breathTries:0, lastHitAt:-999,
+        nudge:0,
+      };
+      $("minigame").classList.add("show");
+      $("mg-title").textContent = def.minigameName + " — " + def.short;
+      $("mg-desc").textContent = def.minigameDesc;
+      $("mg-score").textContent = "Stay with it.";
+      $("mg-cancel").textContent = "Leave";
+      $("mg-cancel").dataset.act = "cancel";
+      layoutMinigame();
+      blip(480, 0.06, "sine", 0.04);
+      return true;
+    }
+
+    function layoutMinigame() {
+      const stage = $("mg-stage");
+      if (!stage || !minigame) return;
+      stage.className = minigame.type;
+      if (minigame.done && minigame.result) {
+        stage.innerHTML = '<div class="bar-label">' + minigame.result.label + '</div><div class="hint-tap">' + minigame.result.detail + '</div>';
+        return;
+      }
+      if (minigame.type === "balance") {
+        stage.innerHTML = '<div class="half left"></div><div class="half right"></div><div class="beam"></div><div class="yogi" style="left:50%">🧘‍♀️</div><div class="zone" style="left:38%;width:24%;top:18%;bottom:22%;border-radius:10px"></div><div class="hint-tap">Tap left or right to lean</div>';
+      } else if (minigame.type === "plank") {
+        stage.innerHTML = '<div class="bar-label">💪</div><div class="bar-track"><div class="zone" style="left:40%;width:35%;top:-8px;bottom:-8px;border-radius:10px"></div><div class="bar-fill" style="width:55%"></div></div><div class="hint-tap">Tap to push the plank bar</div>';
+      } else {
+        stage.innerHTML = '<div class="breath-ring"></div><div class="breath"></div><div class="hint-tap">Tap when the orb kisses the ring</div>';
+      }
+    }
+
+    function minigameScorePct() {
+      if (!minigame) return 0;
+      if (minigame.type === "breath") {
+        if (!minigame.breathTries) return 0;
+        return Math.max(0, Math.min(100, 100 * minigame.breathHits / Math.max(1, minigame.breathTries)));
+      }
+      if (!minigame.samples) return 0;
+      return Math.max(0, Math.min(100, 100 * minigame.inZone / minigame.samples));
+    }
+
+    function tickMinigame(nowPerf) {
+      if (!minigame || minigame.done) return;
+      const t = nowPerf - minigame.t0;
+      const left = Math.max(0, minigame.dur - t);
+      $("mg-time").textContent = Math.ceil(left/1000) + "s";
+      if (minigame.type === "balance") {
+        minigame.v += Math.sin(t/260)*0.00035 + (Math.random()-0.5)*0.0022;
+        minigame.v *= 0.978;
+        minigame.x += minigame.v * 18 + (minigame.x-0.5)*0.003;
+        minigame.x = Math.max(0.06, Math.min(0.94, minigame.x));
+        minigame.samples++;
+        if (Math.abs(minigame.x-0.5) <= 0.12) minigame.inZone++;
+        const yogi = $("mg-stage").querySelector(".yogi");
+        if (yogi) {
+          yogi.style.left = (minigame.x*100) + "%";
+          yogi.style.transform = "translate(-50%,0) rotate(" + ((minigame.x-0.5)*42) + "deg)";
+        }
+      } else if (minigame.type === "plank") {
+        minigame.plank -= 0.0034;
+        minigame.plank = Math.max(0, Math.min(1, minigame.plank));
+        minigame.samples++;
+        if (minigame.plank >= 0.4 && minigame.plank <= 0.75) minigame.inZone++;
+        const fill = $("mg-stage").querySelector(".bar-fill");
+        if (fill) {
+          fill.style.width = (minigame.plank*100) + "%";
+          fill.style.background = (minigame.plank>=0.4 && minigame.plank<=0.75)
+            ? "linear-gradient(90deg, var(--sage), #8fa96e)"
+            : "linear-gradient(90deg, var(--danger), #e08a4a)";
+        }
+      } else if (minigame.type === "breath") {
+        const period = 4000;
+        const phase = (t % period) / period; // 0-0.5 inhale, 0.5-1 exhale
+        let scale;
+        if (phase < 0.5) scale = 0.7 + 2.15 * (phase/0.5);
+        else scale = 2.85 - 2.15 * ((phase-0.5)/0.5);
+        minigame.breathPhase = phase;
+        minigame.breathScale = scale;
+        const orb = $("mg-stage").querySelector(".breath");
+        if (orb) orb.style.transform = "translate(-50%,-50%) scale(" + scale + ")";
+      }
+      const pct = Math.round(minigameScorePct());
+      $("mg-score").textContent = pct + "% in the pocket";
+      if (t >= minigame.dur) endMinigame(false);
+    }
+
+    function onMinigamePointer(ev) {
+      if (!minigame || minigame.done) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (minigame.type === "balance") {
+        const rect = $("mg-stage").getBoundingClientRect();
+        const dir = ev.clientX < (rect.left + rect.width/2) ? -1 : 1;
+        minigame.v += dir * 0.015;
+        minigame.x = Math.max(0.06, Math.min(0.94, minigame.x + dir * 0.035));
+        blip(dir<0?380:520, 0.03, "sine", 0.03);
+      } else if (minigame.type === "plank") {
+        minigame.plank = Math.min(1, minigame.plank + 0.075);
+        blip(280 + minigame.plank*240, 0.03, "square", 0.025);
+      } else if (minigame.type === "breath") {
+        const sc = minigame.breathScale || 1;
+        // ring visual is 120px; orb base 40px, scale 1.7 ≈ 68px... we judge by scale vs 1.7 peak and 0.55 valley
+        const atPeak = Math.abs(sc - 2.85) < 0.28;
+        const atValley = Math.abs(sc - 0.7) < 0.18;
+        minigame.breathTries++;
+        if (atPeak || atValley) {
+          minigame.breathHits++;
+          blip(atPeak?640:420, 0.05, "sine", 0.05);
+          spawnMgFlash(true);
+        } else {
+          blip(180, 0.04, "square", 0.03);
+          spawnMgFlash(false);
+        }
+      }
+    }
+
+    function spawnMgFlash(ok) {
+      const stage = $("mg-stage");
+      if (!stage) return;
+      stage.style.boxShadow = ok ? "inset 0 0 0 3px var(--ok)" : "inset 0 0 0 3px var(--danger)";
+      setTimeout(() => { if (stage) stage.style.boxShadow = ""; }, 150);
+    }
+
+    function endMinigame(cancelled) {
+      if (!minigame || minigame.done) return;
+      const tr = findTrainer(minigame.trainerId);
+      const pct = minigameScorePct();
+      const maxXp = 48;
+      let xp = Math.round((16 + maxXp * (pct/100)) * (cancelled ? 0.35 : 1));
+      if (cancelled && minigame.samples < 20 && minigame.breathTries < 2) xp = 0;
+      const res = tr && xp ? grantXp(tr, xp, false) : { leveled:false, amt:xp };
+      if (tr) tr.trainCoolUntil = Date.now() + TRAIN_COOL_MS;
+      minigame.done = true;
+      minigame.result = {
+        label: (res.leveled ? "Level " + tr.level + "!" : (pct>=80 ? "Radiant." : pct>=50 ? "Nice work." : "Shaky, but it's a start.")),
+        detail: (xp ? ("+" + xp + " XP") : "No XP — try a full session next time.") + (cancelled ? " (left early)" : ""),
+      };
+      $("mg-time").textContent = "Done";
+      $("mg-score").textContent = Math.round(pct) + "% — " + minigame.result.detail;
+      $("mg-cancel").textContent = "Back to the studio";
+      $("mg-cancel").dataset.act = "close";
+      layoutMinigame();
+      resumeClasses();
+      renderAll();
+    }
+
+    function closeMinigame() {
+      if (minigame && !minigame.done) endMinigame(true);
+      minigame = null;
+      resumeClasses();
+      $("minigame").classList.remove("show");
+      $("mg-stage").innerHTML = "";
+      renderAll();
+    }
+
+    function cellFromPoint(x, y) {
+      const el = document.elementFromPoint(x, y);
+      const cell = el && el.closest && el.closest(".cell");
+      if (!cell) return null;
+      return { r:+cell.dataset.r, c:+cell.dataset.c, el:cell };
+    }
+
+    function updateHoverFromEvent(ev) {
+      const hit = cellFromPoint(ev.clientX, ev.clientY);
+      const next = hit ? { r:hit.r, c:hit.c } : null;
+      const same = (hoverCell && next && hoverCell.r===next.r && hoverCell.c===next.c) || (!hoverCell && !next);
+      hoverCell = next;
+      if (!same) {
+        renderBoard();
+        if (holding) { renderSelBar(); hintForBoard(); }
+      }
+    }
+
+    function onPointerDown(ev) {
+      if (minigame) return;
+      if (ev.button != null && ev.button !== 0) return;
+      if (ev.target.closest && ev.target.closest("#sel-bar, #tip, #sheet, #hud, #minigame, button, .task-chip")) return;
+      ev.stopPropagation();
+      const hit = cellFromPoint(ev.clientX, ev.clientY);
+      if (!hit) {
+        drag = { pointerId: ev.pointerId, startX: ev.clientX, startY: ev.clientY, active:false, isDeselect:true };
+        try { ev.currentTarget.setPointerCapture(ev.pointerId); } catch (e) {}
+        ev.preventDefault();
+        return;
+      }
+      ensureAudio();
+      if (holding) {
+        hoverCell = { r:hit.r, c:hit.c };
+        renderBoard();
+        renderSelBar();
+        drag = { pointerId: ev.pointerId, startX: ev.clientX, startY: ev.clientY, active:false, isAim:true };
+        try { ev.currentTarget.setPointerCapture(ev.pointerId); } catch (e) {}
+        ev.preventDefault();
+        return;
+      }
+      const cell = state.grid[hit.r][hit.c];
+      const role = defaultRole(cell);
+      drag = {
+        pointerId: ev.pointerId, startX: ev.clientX, startY: ev.clientY,
+        active:false, from: occupied(cell) ? { r:hit.r, c:hit.c, role } : null,
+        isTap:true,
+      };
+      try { ev.currentTarget.setPointerCapture(ev.pointerId); } catch (e) {}
+      ev.preventDefault();
+    }
+
+    function onPointerMove(ev) {
+      if (minigame) return;
+      if (!drag || ev.pointerId !== drag.pointerId) {
+        if (holding && ev.pointerType === "mouse") updateHoverFromEvent(ev);
+        return;
+      }
+      ev.preventDefault();
+      const dist = Math.hypot(ev.clientX - drag.startX, ev.clientY - drag.startY);
+      if (holding || drag.isAim) {
+        updateHoverFromEvent(ev);
+        return;
+      }
+      if (drag.isDeselect) return;
+      if (!drag.active && dist > 10 && drag.from) {
+        drag.active = true;
+        showGhost(drag.from);
+        renderBoard();
+      }
+      if (drag.active) {
+        moveGhost(ev.clientX, ev.clientY);
+        updateHoverFromEvent(ev);
+      }
+    }
+
+    function onPointerUp(ev) {
+      if (minigame) return;
+      if (!drag || ev.pointerId !== drag.pointerId) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      const d = drag;
+      drag = null;
+      hideGhost();
+      try { ev.currentTarget.releasePointerCapture(ev.pointerId); } catch (e) {}
+      const hit = cellFromPoint(ev.clientX, ev.clientY);
+      if (d.isDeselect) {
+        if (!hit) deselectAll();
+        return;
+      }
+      if (holding || d.isAim) {
+        if (hit) onCellTap(hit.r, hit.c);
+        else { hoverCell = null; renderBoard(); renderSelBar(); hintForBoard(); }
+        return;
+      }
+      if (d.active && d.from) {
+        if (hit) {
+          const ok = tryMove(d.from.r, d.from.c, hit.r, hit.c);
+          if (ok) {
+            selected = { r:hit.r, c:hit.c, role: d.from.role };
+            afterLayout();
+            blip(440, 0.06, "sine", 0.04);
+          } else {
+            flashClass(hit.r, hit.c, "invalid");
+            setHint("Can't drop there.");
+          }
+        }
+        renderAll();
+        return;
+      }
+      // tap
+      if (hit) onCellTap(hit.r, hit.c);
+      else deselectAll();
+    }
+
+    function onPointerCancel(ev) {
+      if (!drag || ev.pointerId !== drag.pointerId) return;
+      drag = null;
+      hideGhost();
+      renderBoard();
+    }
+    function onPointerLeave(ev) {
+      if (holding && ev.pointerType === "mouse" && !drag) {
+        hoverCell = null;
+        renderBoard();
+        renderSelBar();
+      }
+    }
+
+    function showGhost(from) {
+      const g = $("ghost");
+      if (!g || !from) return;
+      const cell = state.grid[from.r][from.c];
+      let ico = "•";
+      if (cell.trainerId) {
+        const tr = findTrainer(cell.trainerId);
+        ico = tr ? trainerDef(tr).emoji : "🧘";
+      } else if (cell.equip) ico = ITEMS[cell.equip.type].emoji;
+      g.innerHTML = '<div class="ghost-item">' + ico + '</div>';
+      g.style.display = "block";
+    }
+    function moveGhost(x, y) {
+      const g = $("ghost");
+      if (!g) return;
+      const wrap = $("board-wrap").getBoundingClientRect();
+      const item = g.querySelector(".ghost-item");
+      if (item) {
+        item.style.left = (x - wrap.left) + "px";
+        item.style.top = (y - wrap.top) + "px";
+      }
+    }
+    function hideGhost() {
+      const g = $("ghost");
+      if (g) { g.innerHTML = ""; g.style.display = "none"; }
+    }
+
+    function influenceOrigin() {
+      if (holding) {
+        const at = previewAnchor();
+        if (at) return { type: holding.type, r: at.r, c: at.c, sample: at.sample, kind: holding.kind };
+      }
+      if (selected) {
+        const cell = state.grid[selected.r][selected.c];
+        if (cell.trainerId) {
+          const tr = findTrainer(cell.trainerId);
+          if (tr) return { type: tr.type, r: selected.r, c: selected.c, sample:false, kind:"trainer" };
+        }
+        if (cell.equip) return { type: cell.equip.type, r: selected.r, c: selected.c, sample:false, kind:"equip" };
+      }
+      return null;
+    }
+
+    function previewGrid() {
+      if (drag && drag.active && hoverCell && drag.from) {
+        const g = cloneGrid(state.grid);
+        const saved = state.grid;
+        state.grid = g;
+        const ok = tryMove(drag.from.r, drag.from.c, hoverCell.r, hoverCell.c);
+        state.grid = saved;
+        return ok ? g : null;
+      }
+      if (holding) {
+        const at = previewAnchor();
+        if (!at || !canPlace(holding.type, holding.kind, at.r, at.c)) return null;
+        const g = cloneGrid(state.grid);
+        if (holding.kind === "trainer") g[at.r][at.c].trainerId = holding.trainerId || -1;
+        else g[at.r][at.c].equip = { type: holding.type };
+        return g;
+      }
+      return null;
+    }
+
+    function sizeBoard() {
+      const wrap = $("board-wrap");
+      if (!wrap) return;
+      const r = wrap.getBoundingClientRect();
+      const pad = 10;
+      const w = Math.max(0, r.width - pad);
+      const h = Math.max(0, r.height - pad);
+      const gap = 2, frame = 10;
+      const cell = Math.max(22, Math.floor(Math.min(
+        (w - frame - gap*(COLS-1)) / COLS,
+        (h - frame - gap*(ROWS-1)) / ROWS
+      )));
+      document.documentElement.style.setProperty("--cell", cell + "px");
+    }
+
+    function renderHeader() {
+      $("cash").textContent = fmt(state.cash);
+      const z = studioZen();
+      $("zen").textContent = z.toFixed(2).replace(/0+$/,"").replace(/\.$/,"") + "×";
+      const eff = efficiency();
+      const effEl = $("eff");
+      const pct = Math.round(eff * 100);
+      effEl.textContent = pct + "%";
+      effEl.className = pct < 55 ? "low" : pct < 80 ? "mid" : "high";
+      $("class-rate").textContent = "$" + fmt(predictedClassPayout()) + "/class";
+      $("loc-name").textContent = "Neighborhood";
+      const now = Date.now();
+      const fill = $("class-fill");
+      if (fill) {
+        let p = 0;
+        if (state.inClass && !classPausedAt) {
+          const dur = Math.max(1, state.classEnds - state.classStart);
+          p = Math.max(0, Math.min(1, (now - state.classStart) / dur));
+        }
+        fill.style.width = (p * 100) + "%";
+      }
+    }
+
+    function renderBoard() {
+      const board = boardEl();
+      if (!board) return;
+      const origin = influenceOrigin();
+      const prev = previewGrid();
+      const grid = prev || state.grid;
+      const aim = holding ? previewAnchor() : null;
+      const lift = drag && drag.active && drag.from ? drag.from : null;
+      let html = "";
+      for (let r=0;r<ROWS;r++) {
+        for (let c=0;c<COLS;c++) {
+          const cell = state.grid[r][c];
+          const view = grid[r][c];
+          const cls = ["cell"];
+          if (r % 2) cls.push("row-odd");
+          if (selected && selected.r===r && selected.c===c) cls.push("selected");
+          if (lift && lift.r===r && lift.c===c) cls.push("lifted");
+          if (aim && aim.r===r && aim.c===c) cls.push(aim.sample ? "aim-sample" : "aim");
+          if (origin) {
+            const hl = hlClass(origin.type);
+            const hit = affectedTiles(origin.type, origin.r, origin.c).some(([ar,ac]) => ar===r && ac===c);
+            if (hit && hl) cls.push(hl);
+          }
+          if (drag && drag.active && hoverCell && hoverCell.r===r && hoverCell.c===c) cls.push("drop-ok");
+          if (view.equip && view.equip.mishap) cls.push("broken");
+          if (state.pests && (r+c) % 5 === 0) cls.push("pest-dots");
+          let inner = "";
+          const eq = view.equip;
+          if (eq) {
+            if (eq.type === "mat") inner += '<div class="mat' + (eq.mishap==="torn"?" torn":"") + '"></div>';
+            else {
+              const mish = eq.mishap==="blown" ? " blown" : eq.mishap==="wilted" ? " wilted" : "";
+              const ev = eq.type==="desk" ? "desk-eq" : eq.type==="speakers" ? "speakers-eq" : eq.type==="plant" ? "plant-eq" : "emoji-eq";
+              inner += '<div class="' + ev + mish + '">' + ITEMS[eq.type].emoji + '</div>';
+            }
+          }
+          const seated = state.seated.find(s => s.r===r && s.c===c);
+          if (seated && eq && eq.type==="mat") inner += '<div class="student">' + seated.emoji + '</div>';
+          const tr = view.trainerId ? findTrainer(view.trainerId) : null;
+          if (tr) {
+            const def = trainerDef(tr);
+            const flowing = tr.flowUntil && Date.now() < tr.flowUntil;
+            inner += '<div class="trainer' + (flowing?" flowing":"") + '"><div class="body">' + def.emoji + '</div><div class="lvl">L' + tr.level + '</div></div>';
+          }
+          if (eq && eq.type === "mat") {
+            const mul = seatMultiplier(grid, r, c);
+            if (mul) inner += '<div class="mult-tag' + (prev?" preview":"") + '">×' + mul.toFixed(2).replace(/0+$/,"").replace(/\.$/,"") + '</div>';
+          }
+          if (cell.equip && cell.equip.mishap) {
+            const lab = cell.equip.mishap==="torn" ? "Torn" : cell.equip.mishap==="blown" ? "Blown" : cell.equip.mishap==="wilted" ? "Wilted" : "Fix";
+            inner += '<div class="fix-badge">' + lab + '</div>';
+          }
+          html += '<div class="' + cls.join(" ") + '" data-r="'+r+'" data-c="'+c+'">' + inner + '</div>';
+        }
+      }
+      board.innerHTML = html;
+    }
+
+    function renderSelBar() {
+      const bar = $("sel-bar");
+      const info = $("sel-info");
+      const btnPlace = $("btn-place"), btnFlow = $("btn-flow"), btnTrain = $("btn-train");
+      const btnRepair = $("btn-repair"), btnStore = $("btn-store");
+      const show = !!(holding || selected);
+      bar.classList.toggle("show", show);
+      if (!show) { sizeBoard(); return; }
+      btnPlace.hidden = true; btnFlow.hidden = true; btnTrain.hidden = true; btnRepair.hidden = true;
+      btnStore.hidden = false; btnStore.textContent = "Store";
+      $("sel-bar").querySelector('[data-act="sell"]').hidden = false;
+      if (holding) {
+        const name = holdingName();
+        const def = holding.kind==="trainer" ? trainerDef(holding.type) : ITEMS[holding.type];
+        const cost = holding.source==="shop" ? itemCost(holding.type) : 0;
+        const aimed = !!placeTarget;
+        const okAim = aimed && canPlace(holding.type, holding.kind, placeTarget.r, placeTarget.c);
+        let head = def.emoji + " " + (def.name || name);
+        if (holding.source==="shop") head += " — $" + fmt(cost);
+        else if (holding.source==="roster") head += " — assign to a slot";
+        else head += " — from storage";
+        const extra = holding.kind==="trainer" ? def.desc : def.desc;
+        const aimTxt = aimed
+          ? (okAim ? " Aimed here. Tap this tile again or Place here to confirm — nothing is spent until then."
+                  : " That tile is taken. Aim at an empty one.")
+          : " Sample range is shown on the floor. Slide over a tile to preview, then tap it to aim.";
+        info.innerHTML = "<strong>" + head + "</strong>" + extra + " " + rangeText(holding.type) + aimTxt;
+        btnPlace.hidden = false;
+        btnPlace.textContent = aimed ? "Place here" : "Aim a tile";
+        btnPlace.disabled = !okAim;
+        btnStore.hidden = true;
+        $("sel-bar").querySelector('[data-act="sell"]').hidden = true;
+      } else if (selected) {
+        const cell = state.grid[selected.r][selected.c];
+        const tr = trainerAt(selected.r, selected.c);
+        if (tr) {
+          const def = trainerDef(tr);
+          const need = xpNeeded(tr.level);
+          const xpLine = tr.level >= 6 ? "Max level." : ("L" + tr.level + " · " + Math.floor(tr.xp) + "/" + need + " XP");
+          info.innerHTML = "<strong>" + def.emoji + " " + def.short + "</strong>" + def.title + " · " + xpLine + " " + rangeText(tr.type);
+          btnFlow.hidden = false;
+          btnTrain.hidden = false;
+          btnStore.textContent = "Bench";
+          $("sel-bar").querySelector('[data-act="sell"]').hidden = true;
+        } else if (cell.equip) {
+          const it = ITEMS[cell.equip.type];
+          info.innerHTML = "<strong>" + it.emoji + " " + it.name + "</strong>" + it.desc + " " + rangeText(cell.equip.type);
+          if (cell.equip.mishap) {
+            btnRepair.hidden = false;
+            info.innerHTML += " Needs a repair.";
+          }
+          if (it.unsellable) {
+            btnStore.hidden = true;
+            $("sel-bar").querySelector('[data-act="sell"]').hidden = true;
+          }
+        }
+      }
+      sizeBoard();
+    }
+
+    function renderTasks() {
+      const el = $("tasks");
+      const due = dueTasks();
+      el.classList.toggle("show", due.length > 0);
+      el.innerHTML = due.map(id => {
+        if (id === "pests") return '<button type="button" class="task-chip overdue" data-task="pests">🐜 Clear pests</button>';
+        const t = TASKS[id];
+        const overdue = state.tasks[id] && state.tasks[id].overdue;
+        return '<button type="button" class="task-chip'+(overdue?" overdue":"")+'" data-task="'+id+'">' + t.emoji + " " + t.name + '</button>';
+      }).join("");
+    }
+
+    function renderStrip() {
+      const strip = $("sheet-strip");
+      let html = "";
+      state.stored.forEach((item, i) => {
+        const it = ITEMS[item.equip.type];
+        html += '<button type="button" class="chip stored" data-store="'+i+'"><div class="ico">'+it.emoji+'</div>'+it.name.replace(" station","").replace("Mood ","")+'<div class="price">Stored</div></button>';
+      });
+      for (const type of SHOP_ORDER) {
+        const it = ITEMS[type];
+        const open = unlocked(type);
+        const cost = itemCost(type);
+        const na = state.cash < cost;
+        const sel = holding && holding.source==="shop" && holding.type===type;
+        const cls = ["chip"];
+        if (!open) cls.push("locked");
+        if (na && open) cls.push("na");
+        if (sel) cls.push("selected");
+        const price = open ? ("$" + fmt(cost)) : "🔒";
+        const shortName = ({mat:"Yoga mat",plant:"Plant",incense:"Incense",speakers:"Speakers",lighting:"Lighting",water:"Water"})[type] || it.name;
+        html += '<button type="button" class="'+cls.join(" ")+'" data-shop="'+type+'"><div class="ico">'+it.emoji+'</div>'+shortName+'<div class="price">'+price+'</div></button>';
+      }
+      strip.innerHTML = html;
+    }
+
+    function renderCrew() {
+      const panel = $("panel-crew");
+      if (!panel) return;
+      const used = slottedTrainers().length;
+      let html = '<div class="info-card"><div class="ico">⭐</div><div class="meta"><h3>Studio slots <span class="slot-pill">'+used+" / "+slotCap()+'</span></h3><p>Assign yogis from your roster to teach. They earn XP from every class, and you can Train them in a short minigame.</p></div></div>';
+      for (const tr of state.roster) {
+        const def = trainerDef(tr);
+        const need = xpNeeded(tr.level);
+        const pct = tr.level>=6 ? 100 : Math.max(0, Math.min(100, 100*tr.xp/need));
+        const xpLine = tr.level>=6 ? "Max level" : (Math.floor(tr.xp)+" / "+need+" XP");
+        html += '<div class="info-card crew-card"><div class="ico">'+def.emoji+'</div><div class="meta"><h3>'+def.name+'</h3><p>'+def.title+' · L'+tr.level+(tr.slotted?" · Teaching":" · On the bench")+' · '+xpLine+'</p><div class="xp-bar"><span style="width:'+pct+'%"></span></div></div><div class="row-btns">';
+        if (tr.slotted) html += '<button type="button" data-act="bench" data-id="'+tr.id+'">Bench</button>';
+        else html += '<button type="button" data-act="assign" data-id="'+tr.id+'">Assign</button>';
+        html += '<button type="button" data-act="train-id" data-id="'+tr.id+'">Train</button></div></div>';
+      }
+      const hired = hiredTypes();
+      for (const type of HIRE_ORDER) {
+        if (hired.has(type)) continue;
+        const def = TRAINERS[type];
+        const open = state.totalEarned + state.cash >= def.unlock;
+        const na = !open || state.cash < def.recruitCost;
+        html += '<button type="button" class="upg-item'+(open?"":" locked-card")+'" data-act="recruit" data-type="'+type+'"><div class="ico">'+def.emoji+'</div><div class="meta"><b>Recruit '+def.short+'</b><span>'+def.title+' — '+def.desc+'</span></div><div class="price'+(na?" na":"")+'">'+(open?("$"+fmt(def.recruitCost)):"🔒 $"+def.unlock)+'</div></button>';
+      }
+      for (const lk of LOCKED_CREW) {
+        html += '<div class="info-card crew-card locked-card silhouette"><div class="ico">'+lk.emoji+'</div><div class="meta"><h3>'+lk.name+'</h3><p>'+lk.title+' — '+lk.desc+' · '+lk.hint+'</p></div></div>';
+      }
+      panel.innerHTML = html;
+    }
+
+    function renderUpgrades() {
+      const panel = $("panel-upgrades");
+      let html = "";
+      for (const key of Object.keys(UPGRADES)) {
+        const u = UPGRADES[key];
+        const lvl = state.upg[key] || 0;
+        const maxed = lvl >= u.costs.length;
+        const cost = maxed ? 0 : u.costs[lvl];
+        const label = maxed ? "Maxed" : u.labels[lvl] + " · $" + fmt(cost);
+        const na = !maxed && state.cash < cost;
+        html += '<button type="button" class="upg-item" data-act="upgrade" data-key="'+key+'" '+(maxed?"disabled":"")+'>'
+          + '<div class="ico">'+u.ico+'</div><div class="meta"><b>'+u.name+'</b><span>'+u.desc+(maxed?"":(" Next: "+u.labels[lvl]))+'</span></div>'
+          + '<div class="price'+(na?" na":"")+'">'+label+'</div></button>';
+      }
+      const staffLabel = state.staff ? "Let go (stop the 8% cut)" : "Hire · $100, then 8% of each class";
+      html += '<button type="button" class="upg-item" data-act="staff"><div class="ico">🧹</div><div class="meta"><b>Studio attendant</b><span>Auto-completes daily tasks and slowly repairs mishaps. Active players can skip the bill.</span></div><div class="price">'+(state.staff?"On duty":staffLabel)+'</div></button>';
+      panel.innerHTML = html;
+    }
+
+    function renderStudio() {
+      const panel = $("panel-studio");
+      const offH = offlineHours();
+      const offLabel = offH < 1 ? Math.round(offH*60) + " minutes" : (offH===1 ? "1 hour" : offH + " hours");
+      let html = '<div class="info-card"><div class="ico">🏠</div><div class="meta"><h3>Neighborhood studio</h3><p>Your first floor. Lifetime cash $'+fmt(state.totalEarned)+'. Classes every 12 seconds in this slice (accelerated). Offline cap '+offLabel+'.</p></div></div>';
+      html += '<div class="info-card locked-card"><div class="ico">🔒</div><div class="meta"><h3>Coming soon: second studio / Goat Yoga</h3><p>Franchise the chain later. Older floors will stay open and editable. Goat Yoga — where the goats themselves do the poses — is a mid-game location, and a Goat Yogi can join your crew.</p></div></div>';
+      html += '<div class="row-btns">'
+        + '<button type="button" data-act="mute">' + (state.muted?"Unmute":"Mute") + '</button>'
+        + '<button type="button" data-act="help">How to play</button>'
+        + '<button type="button" class="warn" data-act="reset">Reset studio</button></div>';
+      if (confirmKind === "reset") {
+        html += '<div class="confirm">This wipes the neighborhood lot and your crew. The original Goat Yoga prototype is untouched.<div class="row-btns"><button type="button" class="warn" data-act="do-reset">Wipe it</button><button type="button" class="ghost" data-act="cancel-confirm">Keep going</button></div></div>';
+      }
+      panel.innerHTML = html;
+    }
+
+    function renderAll() {
+      sizeBoard();
+      renderHeader();
+      renderBoard();
+      renderSelBar();
+      renderTasks();
+      renderStrip();
+      renderCrew();
+      renderUpgrades();
+      renderStudio();
+    }
+
+    function buyUpgrade(key) {
+      const u = UPGRADES[key];
+      if (!u) return false;
+      const lvl = state.upg[key] || 0;
+      if (lvl >= u.costs.length) return false;
+      const cost = u.costs[lvl];
+      if (!spend(cost)) { setHint("Need $" + fmt(cost) + " for that upgrade."); return false; }
+      state.upg[key] = lvl + 1;
+      if (key === "slots") state.trainerSlots = slotCap();
+      afterLayout();
+      setHint(u.name + " — " + u.labels[lvl] + ".");
+      blip(580, 0.07, "triangle", 0.05);
+      return true;
+    }
+
+    function doReset() {
+      state = freshState();
+      selected = holding = placeTarget = hoverCell = null;
+      confirmKind = null;
+      currentTab = "crew";
+      startClass(Date.now());
+      afterLayout();
+      showTip();
+      setHint("A fresh neighborhood studio.");
+    }
+
+    function showTip() { $("tip").classList.add("show"); state.seenHelp = false; sizeBoard(); }
+    function hideTip() { $("tip").classList.remove("show"); state.seenHelp = true; sizeBoard(); save(); }
+
+    function openSheet() { $("sheet").classList.add("open"); $("sheet").classList.remove("collapsed"); }
+    function closeSheetToCollapsed() { $("sheet").classList.remove("open"); $("sheet").classList.add("collapsed"); }
+    function toggleSheet() {
+      if ($("sheet").classList.contains("open")) closeSheetToCollapsed();
+      else openSheet();
+    }
+
+    function selectShop(type) {
+      if (!unlocked(type)) { setHint("Earn a little more cash to unlock that."); return; }
+      if (holding && holding.source==="shop" && holding.type===type) { deselectAll(); return; }
+      selected = null;
+      holding = { source:"shop", kind:"equip", type };
+      placeTarget = null;
+      hoverCell = null;
+      renderAll();
+      hintForBoard();
+    }
+    function selectStored(i) {
+      const item = state.stored[i];
+      if (!item) return;
+      if (holding && holding.source==="stored" && holding.storeIndex===i) { deselectAll(); return; }
+      selected = null;
+      holding = { source:"stored", kind:"equip", type:item.equip.type, item, storeIndex:i };
+      placeTarget = null;
+      renderAll();
+      hintForBoard();
+    }
+
+    function bindUI() {
+      $("btn-menu").addEventListener("click", () => { openSheet(); });
+      $("sheet-handle").addEventListener("click", toggleSheet);
+      $("sheet-strip").addEventListener("click", (e) => {
+        const shop = e.target.closest("[data-shop]");
+        if (shop) { selectShop(shop.dataset.shop); return; }
+        const st = e.target.closest("[data-store]");
+        if (st) selectStored(+st.dataset.store);
+      });
+      $("tasks").addEventListener("click", (e) => {
+        const t = e.target.closest("[data-task]");
+        if (t) completeTask(t.dataset.task);
+      });
+      $("sel-bar").addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-act]");
+        if (!btn) return;
+        const act = btn.dataset.act;
+        if (act==="place") confirmPlace();
+        else if (act==="flow" && selected) tryFlow(selected.r, selected.c);
+        else if (act==="train" && selected) {
+          const tr = trainerAt(selected.r, selected.c);
+          if (tr) startMinigame(tr.id);
+        }
+        else if (act==="repair" && selected) repairAt(selected.r, selected.c);
+        else if (act==="store") storeSelected();
+        else if (act==="sell") sellSelected();
+        else if (act==="deselect") deselectAll();
+      });
+      $("tip").addEventListener("click", (e) => {
+        if (e.target.closest("[data-act='gotit']")) hideTip();
+      });
+      $("sheet-body").addEventListener("click", (e) => {
+        const tab = e.target.closest("[data-tab]");
+        if (tab) {
+          currentTab = tab.dataset.tab;
+          $("tabs").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.tab===currentTab));
+          ["crew","upgrades","studio"].forEach(id => $("panel-"+id).classList.toggle("on", id===currentTab));
+          return;
+        }
+        const btn = e.target.closest("[data-act]");
+        if (!btn) return;
+        const act = btn.dataset.act;
+        if (act==="upgrade") buyUpgrade(btn.dataset.key);
+        else if (act==="staff") hireStaff();
+        else if (act==="recruit") recruitTrainer(btn.dataset.type);
+        else if (act==="assign") assignTrainer(+btn.dataset.id);
+        else if (act==="bench") benchTrainer(+btn.dataset.id);
+        else if (act==="train-id") startMinigame(+btn.dataset.id);
+        else if (act==="mute") { state.muted = !state.muted; renderStudio(); }
+        else if (act==="help") { showTip(); closeSheetToCollapsed(); }
+        else if (act==="reset") { confirmKind = "reset"; renderStudio(); }
+        else if (act==="cancel-confirm") { confirmKind = null; renderStudio(); }
+        else if (act==="do-reset") doReset();
+      });
+      $("mg-stage").addEventListener("pointerdown", onMinigamePointer);
+      $("mg-cancel").addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (!minigame) { closeMinigame(); return; }
+        if (minigame.done) closeMinigame();
+        else endMinigame(true);
+      });
+
+      const wrap = $("board-wrap");
+      wrap.addEventListener("pointerdown", onPointerDown);
+      wrap.addEventListener("pointermove", onPointerMove);
+      wrap.addEventListener("pointerup", onPointerUp);
+      wrap.addEventListener("pointercancel", onPointerCancel);
+      wrap.addEventListener("pointerleave", onPointerLeave);
+
+      window.addEventListener("resize", () => { sizeBoard(); renderBoard(); });
+      window.addEventListener("orientationchange", () => { setTimeout(() => { sizeBoard(); renderAll(); }, 80); });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          if (minigame) { e.preventDefault(); if (!minigame.done) endMinigame(true); closeMinigame(); return; }
+          if (holding || selected || placeTarget) {
+            e.preventDefault();
+            deselectAll();
+          }
+        }
+      });
+      document.addEventListener("pointerup", (e) => {
+        if (minigame) return;
+        if (!(holding || selected)) return;
+        if (e.defaultPrevented) return;
+        if (e.target.closest && e.target.closest("#board .cell, #sheet, #sel-bar, #tip, #tasks, #minigame, button, input")) return;
+        if (e.target.id === "board-wrap" || e.target.id === "hint" || e.target.id === "fx-layer" ||
+            e.target.id === "floats" || e.target.id === "ghost" || e.target.id === "app" ||
+            e.target.id === "class-bar" || e.target.id === "class-fill" ||
+            (e.target.closest && e.target.closest("#hud")) || e.target === document.body || e.target === document.documentElement) {
+          deselectAll();
+        }
+      });
+      document.addEventListener("gesturestart", (e) => e.preventDefault());
+      document.addEventListener("touchmove", (e) => {
+        if (e.target.closest && e.target.closest("#board-wrap") && !(e.target.closest("#sel-bar, #tip, #sheet-strip, #sheet-body, #tasks, #minigame"))) {
+          e.preventDefault();
+        }
+      }, { passive:false });
+    }
+
+    function serialize() {
+      return {
+        version: 1, cash: state.cash, totalEarned: state.totalEarned,
+        grid: state.grid, bought: state.bought, upg: state.upg,
+        roster: state.roster, nextTrainerId: state.nextTrainerId,
+        trainerSlots: slotCap(), staff: state.staff, muted: state.muted,
+        seenHelp: state.seenHelp, stored: state.stored, lastSave: Date.now(),
+        classStart: state.classStart, classEnds: state.classEnds, inClass: state.inClass,
+        seated: state.seated, tasks: state.tasks, pests: state.pests, nextNoshow: state.nextNoshow,
+      };
+    }
+    function save() {
+      try {
+        state.lastSave = Date.now();
+        localStorage.setItem(SAVE_KEY, JSON.stringify(serialize()));
+      } catch (e) {}
+    }
+    function migrateSave(raw) {
+      if (!raw || typeof raw !== "object") return null;
+      const s = freshState();
+      s.cash = +raw.cash || 0;
+      s.totalEarned = +raw.totalEarned || 0;
+      if (Array.isArray(raw.grid) && raw.grid.length === ROWS) {
+        s.grid = raw.grid.map(row => row.map(cell => ({
+          trainerId: cell.trainerId || null,
+          equip: cell.equip ? { type: cell.equip.type, paid: cell.equip.paid||0, mishap: cell.equip.mishap||null } : null,
+        })));
+      }
+      s.bought = Object.assign(defaultBought(), raw.bought||{});
+      s.upg = Object.assign({ tickets:0, mats:0, offline:0, slots:0 }, raw.upg||{});
+      if (Array.isArray(raw.roster) && raw.roster.length) s.roster = raw.roster;
+      s.nextTrainerId = +raw.nextTrainerId || (Math.max(0, ...s.roster.map(t=>t.id)) + 1);
+      s.trainerSlots = slotCap();
+      s.staff = !!raw.staff;
+      s.muted = !!raw.muted;
+      s.seenHelp = !!raw.seenHelp;
+      s.stored = Array.isArray(raw.stored) ? raw.stored : [];
+      s.lastSave = +raw.lastSave || Date.now();
+      s.classStart = +raw.classStart || Date.now();
+      s.classEnds = +raw.classEnds || Date.now()+CLASS_MS;
+      s.inClass = !!raw.inClass;
+      s.seated = Array.isArray(raw.seated) ? raw.seated : [];
+      if (raw.tasks) s.tasks = raw.tasks;
+      s.pests = !!raw.pests;
+      s.nextNoshow = !!raw.nextNoshow;
+      s.version = 1;
+      return s;
+    }
+    function applyOffline(fromTs) {
+      const now = Date.now();
+      const cap = offlineHours() * 3600 * 1000;
+      const elapsed = Math.min(cap, Math.max(0, now - fromTs));
+      const periods = Math.floor(elapsed / (CLASS_MS + CLASS_GAP));
+      if (periods > 0) {
+        const per = predictedClassPayout();
+        const cut = state.staff ? 0.08 : 0;
+        const got = Math.round(periods * per * (1-cut) * 10)/10;
+        if (got > 0) {
+          state.cash += got;
+          state.totalEarned += got;
+          const xp = periods * (4 + listMats().length);
+          for (const tr of slottedTrainers()) grantXp(tr, xp, true);
+          pendingOfflineHint = "While you were away: " + periods + " class" + (periods===1?"":"es") + ", +$" + fmt(got) + ".";
+        }
+      }
+      if (!state.staff && elapsed > TASK_MS) {
+        // Shift due tasks into the past so neglect can show
+        for (const id of Object.keys(TASKS)) {
+          const t = state.tasks[id];
+          if (now > t.dueAt + OVERDUE_MS) {
+            t.overdue = true;
+            spawnMishap(id);
+            t.dueAt = now; // stay due until completed
+          }
+        }
+      }
+      state.classStart = now;
+      state.classEnds = now + CLASS_MS;
+      state.inClass = true;
+      startClass(now);
+    }
+    function load() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(SAVE_KEY) || "null");
+        const migrated = migrateSave(raw);
+        if (migrated) {
+          state = migrated;
+          const last = +raw.lastSave || 0;
+          if (last && Date.now() - last > 2000) applyOffline(last);
+        }
+      } catch (e) {}
+    }
+
+    function tick(nowPerf) {
+      const now = Date.now();
+      if (minigame) tickMinigame(nowPerf);
+      if (!classPausedAt) {
+        if (state.inClass && now >= state.classEnds) finishClass();
+        else if (!state.inClass && now >= state.classEnds) startClass(now);
+        tickMaintenance(now);
+      }
+      renderHeader();
+      if (state.inClass) {
+        // keep students visible; light refresh
+      }
+    }
+
+    function init() {
+      load();
+      bindUI();
+      if (!state.seenHelp) showTip();
+      // If loaded mid-class with stale times, normalize
+      const now = Date.now();
+      if (!state.classEnds || state.classEnds < now - 60000) startClass(now);
+      renderAll();
+      hintForBoard();
+      sizeBoard();
+      requestAnimationFrame(function loop(t) {
+        tick(t);
+        lastTick = t;
+        requestAnimationFrame(loop);
+      });
+      setInterval(save, 5000);
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) { hiddenAt = Date.now(); save(); }
+        else {
+          lastTick = performance.now();
+          const started = hiddenAt; hiddenAt = 0;
+          if (started && Date.now()-started > 2000) applyOffline(started);
+          if (pendingOfflineHint) hintForBoard();
+          renderAll();
+          save();
+        }
+      });
+      window.addEventListener("pagehide", save);
+    }
+
+    window.YogaMogul = {
+      version: 1, COLS, ROWS, ITEMS, TRAINERS, LOCKED_CREW, SHOP_ORDER, SAVE_KEY, CLASS_MS, MG_MS,
+      getState: () => state,
+      setState: (s) => { state = s; },
+      getHolding: () => holding,
+      setHolding: (h) => { holding = h; },
+      getSelected: () => selected,
+      setSelected: (s) => { selected = s; },
+      getPlaceTarget: () => placeTarget,
+      setPlaceTarget: (t) => { placeTarget = t; },
+      getDrag: () => drag,
+      getMinigame: () => minigame,
+      ticketPrice, matQuality, offlineHours, slotCap, itemCost, unlocked,
+      seatMultiplier, rawZen, studioZen, trainerMult, classPayout, predictedClassPayout,
+      idealPayout, efficiency, fillRate, xpNeeded, grantXp, findTrainer, findTrainerPos,
+      canPlace, placeHeldAt, tryMove, moveSelectedTo, storeSelected, sellSelected,
+      affectedTiles, previewGrid, previewAnchor, rangeText, sizeBoard,
+      tryFlow, serialize, save, load, applyOffline, migrateSave, fmt,
+      freshState, spend, earn, doReset, startClass, finishClass,
+      completeTask, repairAt, hireStaff, spawnMishap, dueTasks,
+      recruitTrainer, assignTrainer, benchTrainer,
+      startMinigame, endMinigame, closeMinigame, onMinigamePointer,
+      renderAll, renderBoard, renderHeader, renderCrew,
+      selectShop, selectStored, onCellTap, confirmPlace, deselectAll,
+      hideTip, showTip, clearSelection() { deselectAll(); },
+      openSheet, closeSheetToCollapsed,
+    };
+
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+    else init();
+  })();
+  </script>
+</body>
+</html>

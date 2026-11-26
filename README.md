@@ -17,3 +17,9 @@ Play it here: https://geekahedron.github.io/goat-yoga/
 - Progress saves in this browser. Offline zen accrues when you come back (capped). After enough lifetime zen you can move the retreat for a permanent multiplier.
 
 This is a prototype to test whether the core loop is fun on a phone. You can also open `index.html` directly in a browser.
+
+## Yoga Mogul
+
+A new prototype of the same loop, reframed as a human neighborhood yoga studio (Goat Yoga is a later unlock). Yogis run classes, earn XP, and train in short minigames. Play it here: https://geekahedron.github.io/goat-yoga/yoga-mogul/
+
+The original Goat Yoga prototype at the repo root is unchanged.

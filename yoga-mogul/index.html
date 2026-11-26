@@ -455,6 +455,63 @@
     .plaque b { display: block; font-size: 0.72rem; }
     .plaque span { display: block; font-size: 0.64rem; color: var(--ink-soft); line-height: 1.3; }
     .cert-pill { display: inline-block; font-size: 0.62rem; font-weight: 700; background: #fff3d6; border-radius: 99px; padding: 1px 6px; margin-right: 4px; }
+    .breakdown { list-style: none; margin: 4px 0 0; padding: 0; max-height: 6.8em; overflow: auto; }
+    .breakdown li { display: flex; justify-content: space-between; gap: 8px; font-size: 0.7rem; line-height: 1.35; padding: 1px 0; }
+    .breakdown li .src { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .breakdown li .fac { font-weight: 700; color: var(--sage-dk); white-space: nowrap; }
+    .breakdown li.mishap .fac { color: var(--danger); }
+    .breakdown .total { font-weight: 800; margin-top: 2px; border-top: 1px solid rgba(58,42,34,0.1); padding-top: 3px; }
+    .cell.contrib { box-shadow: 0 0 0 2px #c26a48, 0 0 10px rgba(194,106,72,0.45); z-index: 3; }
+    .cell.affected { box-shadow: 0 0 0 2px rgba(212,160,74,0.9), inset 0 0 10px rgba(240,213,120,0.35); z-index: 2; }
+    .aura-wash { position: absolute; inset: 0; pointer-events: none; opacity: 0.26; border-radius: 5px; }
+    .aura-wash.hl-adj { background: #f0d56a; }
+    .aura-wash.hl-cross { background: #f4c37a; }
+    .aura-wash.hl-diag { background: #9ad4e0; }
+    .aura-wash.hl-rad { background: #e0b8f0; }
+    .aura-wash.hl-ring { background: #f0c96a; }
+    .cell.contrib, .cell.affected { overflow: visible; }
+    .boost-tag {
+      position: absolute; bottom: 1px; right: 1px; left: auto;
+      font-size: 9px; font-weight: 700; color: #3a2a22;
+      background: rgba(255,248,220,0.92); border-radius: 4px; padding: 0 3px;
+      line-height: 1.3; z-index: 3; pointer-events: none;
+    }
+    #aura-lines {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      pointer-events: none; z-index: 4; overflow: visible;
+    }
+    #btn-auras {
+      position: absolute; top: auto; bottom: 8px; right: 8px;
+      z-index: 7; pointer-events: auto;
+      font: inherit; font-size: 0.68rem; font-weight: 700;
+      padding: 6px 8px; min-height: 28px; border-radius: 99px;
+      border: 1.5px solid rgba(58,42,34,0.2);
+      background: rgba(250,244,234,0.92); color: var(--ink);
+      cursor: pointer; box-shadow: 0 1px 3px var(--shadow);
+    }
+    #btn-auras[aria-pressed="true"] { background: var(--sage); color: #fff; border-color: var(--sage); }
+    .mg-grade {
+      position: absolute; left: 50%; top: 18%;
+      transform: translate(-50%, 0); font-weight: 800; font-size: 1.2rem;
+      pointer-events: none; z-index: 3;
+      animation: mgGrade 0.7s ease-out forwards;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.8);
+    }
+    .mg-grade.perfect { color: #a67c18; font-size: 1.35rem; }
+    .mg-grade.great { color: var(--ok); }
+    .mg-grade.good { color: #6b7f5a; }
+    .mg-grade.okay { color: var(--ink-soft); font-size: 1rem; }
+    .mg-grade.miss { color: var(--danger); font-size: 0.95rem; }
+    @keyframes mgGrade { 0%{opacity:1;transform:translate(-50%,8px) scale(0.9)} 100%{opacity:0;transform:translate(-50%,-18px) scale(1.05)} }
+    #mg-intro {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 8px;
+      background: rgba(250,244,234,0.88); z-index: 4; text-align: center; padding: 12px;
+    }
+    #mg-intro .count { font-size: 2.8rem; font-weight: 800; color: var(--terracotta); line-height: 1; }
+    #mg-intro .how { font-size: 0.85rem; color: var(--ink); line-height: 1.35; max-width: 22em; }
+    #mg-stage.now .breath-ring { border-color: var(--terracotta); box-shadow: 0 0 0 4px rgba(194,106,72,0.25); }
 
     .xp-bar { height: 6px; background: rgba(58,42,34,0.12); border-radius: 99px; overflow: hidden; margin-top: 4px; }
     .xp-bar > span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--sage), #8fa96e); }
@@ -604,7 +661,7 @@
   </style>
 </head>
 <body>
-  <div id="app" data-version="2" data-game="yoga-mogul">
+  <div id="app" data-version="3" data-game="yoga-mogul">
     <header id="hud">
       <h1>🧘 <span>Yoga Mogul</span></h1>
       <div class="hud-stats">
@@ -628,15 +685,17 @@
     <div id="class-bar" aria-hidden="true"><span id="class-fill"></span></div>
     <div id="board-wrap">
       <div id="board" aria-label="Neighborhood studio floor"></div>
+      <svg id="aura-lines" aria-hidden="true"></svg>
       <div id="fx-layer"></div>
       <div id="floats"></div>
       <div id="ghost"></div>
       <div id="hint">A quiet neighborhood studio. Classes fill the mats.</div>
+      <button type="button" id="btn-auras" aria-pressed="false">Show auras</button>
     </div>
     <div id="sheet" class="collapsed">
       <div id="tip">
         <b>Welcome to your first studio.</b>
-        Cash is what you spend. The zen meter is a live studio rating — auras and yogis lift it, neglect and crowding drop it — and it multiplies class payouts (50 zen is 1.0×, 100 is 2.0×). Train your yogi for XP and parody certifications; awards on the Studio trophy shelf unlock extra furniture. Select a shop item to preview its range, then tap a tile twice (or Place here) to buy. Drag or tap-then-tap to move — it's free.
+        Cash is what you spend. The zen meter is a live studio rating — auras and yogis lift it, neglect and crowding drop it — and it multiplies class payouts (50 zen is 1.0×, 100 is 2.0×). Tap a mat or yogi to inspect its multiplier breakdown; drag to move (never a second tap). Select a shop item to preview its range, then tap a tile twice (or Place here) to buy. Train your yogi in a short, friendly minigame for XP.
         <div class="row"><button type="button" data-act="gotit">Let's stretch</button></div>
       </div>
       <div id="tasks"></div>
@@ -688,7 +747,11 @@
     const OVERDUE_MS = 40000;
     const STAFF_REPAIR_MS = 8000;
     const TRAIN_COOL_MS = 25000;
-    const MG_MS = 18000;
+    const MG_MS = 16000;
+    const MG_INTRO_MS = 2400;
+    const DRAG_THRESHOLD = 10;
+    const DRAG_HOLD_MS = 140;
+    const DRAG_FORCE_PX = 28;
     const DIRS4 = [[-1,0],[1,0],[0,-1],[0,1]];
     const DIAG = [[-1,-1],[-1,1],[1,-1],[1,1]];
     const STUDENTS = ["🧘","🧘‍♀️","🙇‍♂️","🙆","🧎","🧘‍♂️"];
@@ -752,7 +815,7 @@
         desc:"Blesses the parking meter on her way in and never met a sun salute she didn’t like. Wants a tidy row of mats.",
         specialty:"vinyasa", shape:"adj4", auraMult:1.15, baseMult:1.0, lineCombo:1.2,
         minigame:"balance", minigameName:"Tree Pose",
-        minigameDesc:"The room tilts. Tap the left or right half to lean and keep Priya in the glowing middle.",
+        minigameDesc:"Tap the side she's leaning toward to guide her back into the glow.",
         recruitCost:0, unlock:0,
       },
       brick: {
@@ -761,7 +824,7 @@
         desc:"Ex-linebacker who counts breaths like bench-press reps. High output, zero interest in partner poses — drop him in and stand back.",
         specialty:"power", shape:"radius1", auraMult:1.1, baseMult:1.28,
         minigame:"plank", minigameName:"Power Plank",
-        minigameDesc:"Tap to keep the plank bar in the green. Too soft and he drops; too wild and he face-plants.",
+        minigameDesc:"Tap now and then to keep the bar in the wide green — no need to mash.",
         recruitCost:70, unlock:40,
       },
       juniper: {
@@ -770,7 +833,7 @@
         desc:"Moves in geologic time and greets your houseplants by name. Pairs with greenery and the water station.",
         specialty:"yin", shape:"radius1", auraMult:1.2, baseMult:0.95, plantSynergy:1.16,
         minigame:"breath", minigameName:"Ocean Breath",
-        minigameDesc:"The circle swells and fades. Tap when it kisses the ring — inhale at the big peak, exhale at the small one.",
+        minigameDesc:"When the orb nears the ring, tap. Early or late still counts for partial credit.",
         recruitCost:110, unlock:90,
       },
     };
@@ -822,7 +885,7 @@
           tidy:{ dueAt: now + TASK_MS + 16000, overdue:false },
         },
         pests:false, nextNoshow:false, staffFixAt:0, version:2,
-        awards:{}, certs:{}, matsRolled:0, classesRun:0, zenHighSince:0,
+        awards:{}, certs:{}, matsRolled:0, classesRun:0, zenHighSince:0, showAuras:false,
       };
     }
 
@@ -1100,6 +1163,115 @@
       return m;
     }
 
+    function fmtFactor(f) {
+      const x = "×" + (Math.round(f * 100) / 100).toFixed(2).replace(/0+$/,"").replace(/\.$/,"");
+      const pct = Math.round((f - 1) * 100);
+      return x + " (" + (pct>=0?"+":"") + pct + "%)";
+    }
+
+    function seatBreakdown(grid, r, c) {
+      grid = grid || state.grid;
+      const cell = grid[r][c];
+      if (!cell || !cell.equip || cell.equip.type !== "mat") return null;
+      const parts = [];
+      const base = matQuality();
+      parts.push({ name: (state.upg.mats ? "Premium mat" : "Yoga mat"), emoji:"🧘", factor: base, kind:"base", r:r, c:c });
+      let m = base;
+      if (cell.equip.mishap === "torn") {
+        parts.push({ name:"Torn mat", emoji:"⚠️", factor:0.7, kind:"mishap", r:r, c:c });
+        m *= 0.7;
+      }
+      for (let rr=0; rr<ROWS; rr++) for (let cc=0; cc<COLS; cc++) {
+        const eq = grid[rr][cc].equip;
+        if (!eq) continue;
+        const it = ITEMS[eq.type];
+        if (!it || !it.mult || it.shape === "global") continue;
+        if (eq.type === "plant" && eq.mishap === "wilted") continue;
+        if (eq.type === "speakers" && eq.mishap === "blown") continue;
+        if (eq.type === "lighting" && eq.mishap === "dark") continue;
+        const hit = affectedTiles(eq.type, rr, cc).some(([ar,ac]) => ar===r && ac===c);
+        if (hit) {
+          parts.push({ name: it.name, emoji: it.emoji, factor: it.mult, kind:"aura", type: eq.type, r:rr, c:cc });
+          m *= it.mult;
+        }
+      }
+      for (const tr of (grid === state.grid ? slottedTrainers() : trainersOnGrid(grid))) {
+        const pos = findTrainerPos(tr.id, grid);
+        if (!pos) continue;
+        const def = trainerDef(tr);
+        const bon = trainerBonuses(tr);
+        const hit = affectedTiles(tr.type, pos.r, pos.c).some(([ar,ac]) => ar===r && ac===c);
+        if (hit) {
+          parts.push({ name: def.short + " aura", emoji: def.emoji, factor: bon.aura, kind:"yogi", type: tr.type, r:pos.r, c:pos.c, trainerId: tr.id });
+          m *= bon.aura;
+        }
+        if (def.lineCombo && (pos.r===r || pos.c===c)) {
+          const line = listMats(grid).filter(mt => (pos.r===r ? mt.r===r : mt.c===c));
+          if (line.length >= 3) {
+            parts.push({ name: def.short + " line combo", emoji: def.emoji, factor: def.lineCombo, kind:"combo", r:pos.r, c:pos.c });
+            m *= def.lineCombo;
+          }
+        }
+        if (def.plantSynergy && hit) {
+          let near = false;
+          for (const [dr,dc] of DIRS4) {
+            const rr=r+dr, cc=c+dc;
+            if (inBounds(rr,cc) && plantsHealthy(grid, rr, cc)) near = true;
+          }
+          if (near) {
+            parts.push({ name: def.short + " plant synergy", emoji: def.emoji, factor: def.plantSynergy, kind:"synergy", r:pos.r, c:pos.c });
+            m *= def.plantSynergy;
+          }
+        }
+      }
+      return { total: m, parts };
+    }
+
+    function emitterInfo(r, c, grid) {
+      grid = grid || state.grid;
+      const cell = grid[r][c];
+      if (!cell) return null;
+      const tr = cell.trainerId ? findTrainer(cell.trainerId) : null;
+      if (tr) {
+        const def = trainerDef(tr);
+        const bon = trainerBonuses(tr);
+        const tiles = affectedTiles(tr.type, r, c);
+        const hits = tiles.filter(([rr,cc]) => grid[rr][cc].equip && grid[rr][cc].equip.type === "mat")
+          .map(([rr,cc]) => ({ r:rr, c:cc, factor: bon.aura, total: seatMultiplier(grid, rr, cc) }));
+        return { kind:"trainer", name: def.short, emoji: def.emoji, type: tr.type, factor: bon.aura, tiles, hits, trainer: tr };
+      }
+      if (cell.equip) {
+        const it = ITEMS[cell.equip.type];
+        if (!it) return null;
+        if (it.type === "mat" || cell.equip.type === "mat") return { kind:"mat", name: it.name, emoji: it.emoji, type: "mat" };
+        const tiles = affectedTiles(cell.equip.type, r, c);
+        const factor = (it.mult && it.shape !== "global") ? it.mult : (it.mult || 1);
+        const hits = tiles.filter(([rr,cc]) => grid[rr][cc].equip && grid[rr][cc].equip.type === "mat")
+          .map(([rr,cc]) => ({ r:rr, c:cc, factor: factor, total: seatMultiplier(grid, rr, cc) }));
+        return { kind:"equip", name: it.name, emoji: it.emoji, type: cell.equip.type, factor: factor, tiles, hits, mishap: cell.equip.mishap, unsellable: !!it.unsellable };
+      }
+      return null;
+    }
+
+    function coverageSources(grid) {
+      grid = grid || state.grid;
+      const out = [];
+      for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
+        const eq = grid[r][c].equip;
+        if (eq && ITEMS[eq.type] && ITEMS[eq.type].mult && ITEMS[eq.type].shape !== "global") {
+          if (eq.type === "plant" && eq.mishap === "wilted") continue;
+          if (eq.type === "speakers" && eq.mishap === "blown") continue;
+          if (eq.type === "lighting" && eq.mishap === "dark") continue;
+          out.push({ type: eq.type, r, c });
+        }
+        if (grid[r][c].trainerId) {
+          const tr = findTrainer(grid[r][c].trainerId);
+          if (tr) out.push({ type: tr.type, r, c, trainer: true });
+        }
+      }
+      return out;
+    }
+
     function trainersOnGrid(grid) {
       const ids = new Set();
       for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
@@ -1329,9 +1501,10 @@
       if (selected) {
         const cell = state.grid[selected.r][selected.c];
         const tr = trainerAt(selected.r, selected.c);
-        if (tr) setHint(trainerDef(tr).short + " is selected. Drag or tap a tile to move, Train for XP, or Flow for a cash burst.");
-        else if (cell.equip && cell.equip.mishap) setHint("This needs a repair. Tap Repair in the tray — or move it first if you'd rather.");
-        else if (cell.equip) setHint("Selected. Drag or tap a destination to move — it's free. Drop on another item to swap.");
+        if (tr) setHint(trainerDef(tr).short + " is selected. Drag to move, Train for XP, or Flow for a cash burst. Tap again to deselect.");
+        else if (cell.equip && cell.equip.mishap) setHint("This needs a repair. Tap Repair in the tray, or drag to move it.");
+        else if (cell.equip && cell.equip.type === "mat") setHint("Inspecting this mat. Sources are highlighted. Drag to move — tapping another tile won't relocate it.");
+        else if (cell.equip) setHint("These tiles get this item's boost. Drag to move — a tap only inspects.");
         return;
       }
       const due = dueTasks();
@@ -1608,21 +1781,9 @@
         return;
       }
       const cell = state.grid[r][c];
+      // Tap inspects only — never moves a placed item. Re-tap deselects.
       if (selected && selected.r===r && selected.c===c) {
         deselectAll();
-        return;
-      }
-      if (selected && (selected.r!==r || selected.c!==c)) {
-        const ok = moveSelectedTo(r, c);
-        if (ok) return;
-        if (occupied(cell)) {
-          selected = { r, c, role: defaultRole(cell) };
-          renderAll();
-          hintForBoard();
-          return;
-        }
-        flashClass(r,c,"invalid");
-        setHint("Can't move there. Try an empty tile, or drop onto another item to swap.");
         return;
       }
       if (occupied(cell)) {
@@ -1903,7 +2064,214 @@
       classPausedAt = 0;
     }
 
-    function startMinigame(trainerId) {
+    function mgMulberry(seed) {
+      let s = (seed >>> 0) || 1;
+      return function() {
+        s = (s + 0x6D2B79F5) >>> 0;
+        let t = s;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    function mgGradeFromQ(q) {
+      if (q >= 0.95) return "perfect";
+      if (q >= 0.75) return "great";
+      if (q >= 0.5) return "good";
+      if (q >= 0.2) return "okay";
+      return "miss";
+    }
+    function mgGradeLabel(g) {
+      return { perfect:"Perfect!", great:"Great", good:"Good", okay:"Okay", miss:"Miss" }[g] || "";
+    }
+    function breathTargetTimes() {
+      const period = 5000;
+      const out = [];
+      for (let t = 2500; t <= MG_MS + 50; t += period / 2) out.push(t);
+      return out;
+    }
+    function createMinigameState(type, trainerId) {
+      return {
+        type, trainerId: trainerId || 0,
+        t0: 0, playStart: 0, intro: true, done: false, result: null,
+        x: 0.5, v: 0, plank: 0.58,
+        scoreSum: 0, sampleMs: 0,
+        breathHits: 0, breathTried: {}, lastBreath: -1,
+        lastQ: 0, lastGrade: "", cue: false,
+      };
+    }
+    function mgQuality(mg) {
+      if (mg.type === "balance") {
+        const d = Math.abs(mg.x - 0.5);
+        if (d <= 0.24) return 1;
+        if (d <= 0.36) return 0.8;
+        if (d <= 0.48) return 0.6;
+        if (d <= 0.60) return 0.3;
+        return 0;
+      }
+      if (mg.type === "plank") {
+        const p = mg.plank;
+        if (p >= 0.45 && p <= 0.68) return 1;
+        if (p >= 0.36 && p <= 0.80) return 0.8;
+        if (p >= 0.22 && p <= 0.90) return 0.55;
+        if (p > 0.08 && p < 0.96) return 0.25;
+        return 0;
+      }
+      return 0;
+    }
+    function mgTickLogic(mg, dt, now) {
+      if (mg.done) return;
+      if (mg.intro) {
+        if (now - mg.t0 >= MG_INTRO_MS) {
+          mg.intro = false;
+          mg.playStart = now;
+        }
+        return;
+      }
+      const t = now - mg.playStart;
+      if (mg.type === "balance") {
+        const k = dt / 16;
+        mg.v += Math.sin(t / 820) * 0.0001 * k + (Math.sin(t / 1730 + 1.3) * 0.00008) * k;
+        mg.v *= Math.pow(0.99, k);
+        mg.x += mg.v * 3.2 * k + (mg.x - 0.5) * 0.00035 * k;
+        mg.x += (0.5 - mg.x) * 0.006 * k; // gentle magnet
+        mg.x = Math.max(0.06, Math.min(0.94, mg.x));
+        const q = mgQuality(mg);
+        mg.scoreSum += q * dt;
+        mg.sampleMs += dt;
+        mg.lastQ = q;
+        mg.lastGrade = mgGradeFromQ(q);
+      } else if (mg.type === "plank") {
+        const k = dt / 16;
+        mg.plank -= 0.00135 * k;
+        if (mg.plank < 0) mg.plank = 0;
+        if (mg.plank > 1) mg.plank = 1;
+        const q = mgQuality(mg);
+        mg.scoreSum += q * dt;
+        mg.sampleMs += dt;
+        mg.lastQ = q;
+        mg.lastGrade = mgGradeFromQ(q);
+      } else if (mg.type === "breath") {
+        const period = 5000;
+        const phase = (t % period) / period;
+        let scale;
+        if (phase < 0.5) scale = 0.7 + 2.15 * (phase / 0.5);
+        else scale = 2.85 - 2.15 * ((phase - 0.5) / 0.5);
+        mg.breathPhase = phase;
+        mg.breathScale = scale;
+        mg.playT = t;
+        const targets = breathTargetTimes();
+        let near = false;
+        for (let i = 0; i < targets.length; i++) {
+          if (Math.abs(t - targets[i]) <= 700) { near = true; break; }
+        }
+        mg.cue = near;
+      }
+      if (t >= MG_MS) {
+        mg.done = true;
+      }
+    }
+    function mgTapLogic(mg, now, info) {
+      if (!mg || mg.done || mg.intro) return null;
+      const t = now - (mg.playStart || now);
+      if (mg.type === "balance") {
+        const dir = info && info.dir != null ? info.dir : 0;
+        mg.v += dir * 0.008;
+        mg.x = Math.max(0.06, Math.min(0.94, mg.x + dir * 0.05));
+        const q = mgQuality(mg);
+        mg.lastQ = q;
+        mg.lastGrade = mgGradeFromQ(q);
+        return { grade: mg.lastGrade, q };
+      }
+      if (mg.type === "plank") {
+        mg.plank = Math.min(1, mg.plank + 0.055);
+        const q = mgQuality(mg);
+        mg.lastQ = q;
+        mg.lastGrade = mgGradeFromQ(q);
+        return { grade: mg.lastGrade, q };
+      }
+      if (mg.type === "breath") {
+        const targets = breathTargetTimes();
+        let best = null, bestDist = 1e9, bestI = -1;
+        for (let i = 0; i < targets.length; i++) {
+          const d = Math.abs(t - targets[i]);
+          if (d < bestDist) { bestDist = d; best = targets[i]; bestI = i; }
+        }
+        if (best == null || bestDist > 900) {
+          mg.lastGrade = "miss";
+          mg.lastQ = 0;
+          return { grade:"miss", q:0, early:true };
+        }
+        if (mg.breathTried[bestI]) {
+          mg.lastGrade = "okay";
+          mg.lastQ = 0.2;
+          return { grade:"okay", q:0.2, repeat:true };
+        }
+        mg.breathTried[bestI] = true;
+        let q = 0;
+        if (bestDist <= 280) q = 1;
+        else if (bestDist <= 480) q = 0.8;
+        else if (bestDist <= 700) q = 0.6;
+        else q = 0.3;
+        mg.scoreSum += q;
+        mg.breathHits++;
+        mg.lastQ = q;
+        mg.lastGrade = mgGradeFromQ(q);
+        return { grade: mg.lastGrade, q };
+      }
+      return null;
+    }
+    function mgScorePct(mg) {
+      if (!mg) return 0;
+      if (mg.type === "breath") {
+        const n = breathTargetTimes().filter(tt => tt <= MG_MS).length;
+        return Math.max(0, Math.min(100, 100 * mg.scoreSum / Math.max(1, n)));
+      }
+      if (!mg.sampleMs) return 0;
+      return Math.max(0, Math.min(100, 100 * mg.scoreSum / mg.sampleMs));
+    }
+    function simulateHumanPlay(type, opts) {
+      opts = opts || {};
+      const reaction = opts.reactionMs != null ? opts.reactionMs : 250;
+      const jitter = opts.jitterMs != null ? opts.jitterMs : 100;
+      const rng = mgMulberry(opts.seed != null ? opts.seed : 1);
+      const mg = createMinigameState(type, 0);
+      mg.t0 = 0;
+      const dt = 16;
+      let pending = null;
+      const endAt = MG_INTRO_MS + MG_MS + 80;
+      for (let t = 0; t <= endAt; t += dt) {
+        if (!mg.intro && !mg.done && !pending) {
+          const delay = Math.max(80, reaction + (rng() * 2 - 1) * jitter);
+          if (mg.type === "balance") {
+            if (mg.x > 0.54) pending = { at: t + delay, dir: -1 };
+            else if (mg.x < 0.46) pending = { at: t + delay, dir: 1 };
+          } else if (mg.type === "plank") {
+            // First-try player waits until the bar looks clearly low, then reacts.
+            if (mg.plank < 0.34) pending = { at: t + delay + 120 };
+          } else if (mg.type === "breath") {
+            const playT = t - mg.playStart;
+            const targets = breathTargetTimes();
+            for (let i = 0; i < targets.length; i++) {
+              if (mg.breathTried[i]) continue;
+              const d = targets[i] - playT;
+              // React to the "Now" cue appearing (~700ms early), not a perfect anticipation.
+              if (d <= 700 && d >= 620) { pending = { at: t + delay }; break; }
+            }
+          }
+        }
+        if (pending && t >= pending.at) {
+          mgTapLogic(mg, t, pending);
+          pending = null;
+        }
+        mgTickLogic(mg, dt, t);
+        if (mg.done) break;
+      }
+      if (!mg.done) { mg.done = true; }
+      return mgScorePct(mg);
+    }
+
+    function startMinigame(trainerId, opts) {
       if (minigame) return false;
       const tr = findTrainer(trainerId);
       if (!tr) return false;
@@ -1916,17 +2284,13 @@
       const def = trainerDef(tr);
       ensureAudio();
       pauseClasses();
-      minigame = {
-        type: def.minigame, trainerId: tr.id, t0: performance.now(), dur: MG_MS,
-        inZone:0, samples:0, done:false, result:null,
-        x:0.5, v:0, plank:0.55,
-        breathT:0, breathHits:0, breathTries:0, lastHitAt:-999,
-        nudge:0,
-      };
+      minigame = createMinigameState(def.minigame, tr.id);
+      minigame.t0 = performance.now();
+      if (opts && opts.skipIntro) { minigame.intro = false; minigame.playStart = minigame.t0; }
       $("minigame").classList.add("show");
       $("mg-title").textContent = def.minigameName + " — " + def.short;
       $("mg-desc").textContent = def.minigameDesc;
-      $("mg-score").textContent = "Stay with it.";
+      $("mg-score").textContent = "Get ready.";
       $("mg-cancel").textContent = "Leave";
       $("mg-cancel").dataset.act = "cancel";
       layoutMinigame();
@@ -1942,97 +2306,96 @@
         stage.innerHTML = '<div class="bar-label">' + minigame.result.label + '</div><div class="hint-tap">' + minigame.result.detail + '</div>';
         return;
       }
+      if (minigame.intro) {
+        const left = Math.max(0, MG_INTRO_MS - (performance.now() - minigame.t0));
+        const n = Math.max(1, Math.ceil(left / 800));
+        const how = minigame.type==="balance" ? "Tap the side she's leaning toward. Stay in the glow."
+          : minigame.type==="plank" ? "Tap now and then to keep the bar in the wide green zone."
+          : "Tap when the orb meets the ring. Early or late still earns credit.";
+        stage.innerHTML = '<div id="mg-intro"><div class="count">'+n+'</div><div class="how">'+how+'</div></div>';
+        return;
+      }
       if (minigame.type === "balance") {
-        stage.innerHTML = '<div class="half left"></div><div class="half right"></div><div class="beam"></div><div class="yogi" style="left:50%">🧘‍♀️</div><div class="zone" style="left:38%;width:24%;top:18%;bottom:22%;border-radius:10px"></div><div class="hint-tap">Tap left or right to lean</div>';
+        stage.innerHTML = '<div class="half left"></div><div class="half right"></div><div class="beam"></div><div class="yogi" style="left:50%">🧘‍♀️</div><div class="zone" style="left:28%;width:44%;top:16%;bottom:20%;border-radius:12px"></div><div class="hint-tap">Tap left or right to lean</div>';
       } else if (minigame.type === "plank") {
-        stage.innerHTML = '<div class="bar-label">💪</div><div class="bar-track"><div class="zone" style="left:40%;width:35%;top:-8px;bottom:-8px;border-radius:10px"></div><div class="bar-fill" style="width:55%"></div></div><div class="hint-tap">Tap to push the plank bar</div>';
+        stage.innerHTML = '<div class="bar-label">💪</div><div class="bar-track"><div class="zone" style="left:20%;width:70%;top:-8px;bottom:-8px;border-radius:10px"></div><div class="bar-fill" style="width:58%"></div></div><div class="hint-tap">Tap to lift the plank bar</div>';
       } else {
         stage.innerHTML = '<div class="breath-ring"></div><div class="breath"></div><div class="hint-tap">Tap when the orb kisses the ring</div>';
       }
     }
 
-    function minigameScorePct() {
-      if (!minigame) return 0;
-      if (minigame.type === "breath") {
-        if (!minigame.breathTries) return 0;
-        return Math.max(0, Math.min(100, 100 * minigame.breathHits / Math.max(1, minigame.breathTries)));
-      }
-      if (!minigame.samples) return 0;
-      return Math.max(0, Math.min(100, 100 * minigame.inZone / minigame.samples));
-    }
+    function minigameScorePct() { return mgScorePct(minigame); }
 
     function tickMinigame(nowPerf) {
       if (!minigame || minigame.done) return;
-      const t = nowPerf - minigame.t0;
-      const left = Math.max(0, minigame.dur - t);
+      const wasIntro = minigame.intro;
+      const dt = Math.max(8, Math.min(40, nowPerf - (minigame.lastPerf || nowPerf)));
+      minigame.lastPerf = nowPerf;
+      mgTickLogic(minigame, dt, nowPerf);
+      if (wasIntro && !minigame.intro) {
+        layoutMinigame();
+        blip(560, 0.07, "sine", 0.05);
+      }
+      if (minigame.intro) {
+        const left = Math.max(0, MG_INTRO_MS - (nowPerf - minigame.t0));
+        const n = Math.max(1, Math.ceil(left / 800));
+        const el = $("mg-intro") && $("mg-intro").querySelector(".count");
+        if (el && el.textContent !== String(n)) {
+          el.textContent = String(n);
+          blip(400 + n*60, 0.05, "sine", 0.04);
+        }
+        $("mg-time").textContent = "Ready";
+        $("mg-score").textContent = "Get ready.";
+        if (minigame.done) endMinigame(false);
+        return;
+      }
+      const t = nowPerf - minigame.playStart;
+      const left = Math.max(0, MG_MS - t);
       $("mg-time").textContent = Math.ceil(left/1000) + "s";
       if (minigame.type === "balance") {
-        minigame.v += Math.sin(t/260)*0.00035 + (Math.random()-0.5)*0.0022;
-        minigame.v *= 0.978;
-        minigame.x += minigame.v * 18 + (minigame.x-0.5)*0.003;
-        minigame.x = Math.max(0.06, Math.min(0.94, minigame.x));
-        minigame.samples++;
-        if (Math.abs(minigame.x-0.5) <= 0.12) minigame.inZone++;
         const yogi = $("mg-stage").querySelector(".yogi");
         if (yogi) {
           yogi.style.left = (minigame.x*100) + "%";
-          yogi.style.transform = "translate(-50%,0) rotate(" + ((minigame.x-0.5)*42) + "deg)";
+          yogi.style.transform = "translate(-50%,0) rotate(" + ((minigame.x-0.5)*36) + "deg)";
         }
       } else if (minigame.type === "plank") {
-        minigame.plank -= 0.0034;
-        minigame.plank = Math.max(0, Math.min(1, minigame.plank));
-        minigame.samples++;
-        if (minigame.plank >= 0.4 && minigame.plank <= 0.75) minigame.inZone++;
         const fill = $("mg-stage").querySelector(".bar-fill");
         if (fill) {
           fill.style.width = (minigame.plank*100) + "%";
-          fill.style.background = (minigame.plank>=0.4 && minigame.plank<=0.75)
+          const q = minigame.lastQ;
+          fill.style.background = q >= 0.75
             ? "linear-gradient(90deg, var(--sage), #8fa96e)"
+            : q >= 0.2
+            ? "linear-gradient(90deg, #c9a24a, #e0c56a)"
             : "linear-gradient(90deg, var(--danger), #e08a4a)";
         }
       } else if (minigame.type === "breath") {
-        const period = 4000;
-        const phase = (t % period) / period; // 0-0.5 inhale, 0.5-1 exhale
-        let scale;
-        if (phase < 0.5) scale = 0.7 + 2.15 * (phase/0.5);
-        else scale = 2.85 - 2.15 * ((phase-0.5)/0.5);
-        minigame.breathPhase = phase;
-        minigame.breathScale = scale;
         const orb = $("mg-stage").querySelector(".breath");
-        if (orb) orb.style.transform = "translate(-50%,-50%) scale(" + scale + ")";
+        if (orb) orb.style.transform = "translate(-50%,-50%) scale(" + (minigame.breathScale || 1) + ")";
+        $("mg-stage").classList.toggle("now", !!minigame.cue);
       }
-      const pct = Math.round(minigameScorePct());
-      $("mg-score").textContent = pct + "% in the pocket";
-      if (t >= minigame.dur) endMinigame(false);
+      const pct = Math.round(mgScorePct(minigame));
+      const g = minigame.lastGrade ? mgGradeLabel(minigame.lastGrade) : "";
+      $("mg-score").textContent = (g ? g + " · " : "") + pct + "% in the pocket";
+      if (minigame.done) endMinigame(false);
     }
 
     function onMinigamePointer(ev) {
-      if (!minigame || minigame.done) return;
+      if (!minigame || minigame.done || minigame.intro) return;
       ev.preventDefault();
       ev.stopPropagation();
+      const now = performance.now();
+      let info = {};
       if (minigame.type === "balance") {
         const rect = $("mg-stage").getBoundingClientRect();
-        const dir = ev.clientX < (rect.left + rect.width/2) ? -1 : 1;
-        minigame.v += dir * 0.015;
-        minigame.x = Math.max(0.06, Math.min(0.94, minigame.x + dir * 0.035));
-        blip(dir<0?380:520, 0.03, "sine", 0.03);
-      } else if (minigame.type === "plank") {
-        minigame.plank = Math.min(1, minigame.plank + 0.075);
-        blip(280 + minigame.plank*240, 0.03, "square", 0.025);
-      } else if (minigame.type === "breath") {
-        const sc = minigame.breathScale || 1;
-        // ring visual is 120px; orb base 40px, scale 1.7 ≈ 68px... we judge by scale vs 1.7 peak and 0.55 valley
-        const atPeak = Math.abs(sc - 2.85) < 0.28;
-        const atValley = Math.abs(sc - 0.7) < 0.18;
-        minigame.breathTries++;
-        if (atPeak || atValley) {
-          minigame.breathHits++;
-          blip(atPeak?640:420, 0.05, "sine", 0.05);
-          spawnMgFlash(true);
-        } else {
-          blip(180, 0.04, "square", 0.03);
-          spawnMgFlash(false);
-        }
+        info.dir = ev.clientX < (rect.left + rect.width/2) ? -1 : 1;
+      }
+      const res = mgTapLogic(minigame, now, info);
+      if (res) {
+        spawnMgGrade(res.grade);
+        if (res.q >= 0.5) blip(res.q>=0.95?720: res.q>=0.75?600:480, 0.05, "sine", 0.04);
+        else blip(220, 0.04, "square", 0.03);
+        try { if (navigator.vibrate) navigator.vibrate(res.q>=0.75?15:8); } catch (e) {}
       }
     }
 
@@ -2040,26 +2403,36 @@
       const stage = $("mg-stage");
       if (!stage) return;
       stage.style.boxShadow = ok ? "inset 0 0 0 3px var(--ok)" : "inset 0 0 0 3px var(--danger)";
-      setTimeout(() => { if (stage) stage.style.boxShadow = ""; }, 150);
+      setTimeout(() => { if (stage) stage.style.boxShadow = ""; }, 180);
+    }
+    function spawnMgGrade(grade) {
+      const stage = $("mg-stage");
+      if (!stage || !grade) return;
+      const el = document.createElement("div");
+      el.className = "mg-grade " + grade;
+      el.textContent = mgGradeLabel(grade);
+      stage.appendChild(el);
+      spawnMgFlash(grade !== "miss");
+      setTimeout(() => el.remove(), 720);
     }
 
     function endMinigame(cancelled) {
-      if (!minigame || minigame.done) return;
+      if (!minigame || minigame.done && minigame.result) return;
+      minigame.done = true;
       const tr = findTrainer(minigame.trainerId);
-      const pct = minigameScorePct();
+      const pct = mgScorePct(minigame);
       let maxXp = 48;
       if (tr && hasCert(tr, "ryt200")) maxXp = 60;
       if (tr && hasCert(tr, "ryt500")) maxXp = 76;
       let xp = Math.round((16 + maxXp * (pct/100)) * (cancelled ? 0.35 : 1));
-      if (cancelled && minigame.samples < 20 && minigame.breathTries < 2) xp = 0;
+      if (cancelled && minigame.sampleMs < 800 && !minigame.breathHits) xp = 0;
       if (tr && !cancelled) tr.minigames = (tr.minigames || 0) + 1;
       const res = tr && xp ? grantXp(tr, xp, false) : { leveled:false, amt:xp };
       if (tr && !cancelled && (xp > 0 || (tr.minigames || 0) >= 1)) maybeCertsFromProgress(tr, pct);
       if (tr) tr.trainCoolUntil = Date.now() + TRAIN_COOL_MS;
-      minigame.done = true;
       minigame.result = {
-        label: (res.leveled ? "Level " + tr.level + "!" : (pct>=80 ? "Radiant." : pct>=50 ? "Nice work." : "Shaky, but it's a start.")),
-        detail: (xp ? ("+" + xp + " XP") : "No XP — try a full session next time.") + (cancelled ? " (left early)" : ""),
+        label: (res.leveled ? "Level " + tr.level + "!" : (pct>=80 ? "Radiant." : pct>=60 ? "Nice work." : pct>=40 ? "Solid start." : "Shaky, but it's a start.")),
+        detail: (xp ? ("+" + xp + " XP · " + Math.round(pct) + "%") : "No XP — try a full session next time.") + (cancelled ? " (left early)" : ""),
       };
       $("mg-time").textContent = "Done";
       $("mg-score").textContent = Math.round(pct) + "% — " + minigame.result.detail;
@@ -2071,7 +2444,7 @@
     }
 
     function closeMinigame() {
-      if (minigame && !minigame.done) endMinigame(true);
+      if (minigame && !(minigame.done && minigame.result)) endMinigame(true);
       minigame = null;
       resumeClasses();
       $("minigame").classList.remove("show");
@@ -2100,11 +2473,11 @@
     function onPointerDown(ev) {
       if (minigame) return;
       if (ev.button != null && ev.button !== 0) return;
-      if (ev.target.closest && ev.target.closest("#sel-bar, #tip, #sheet, #hud, #minigame, button, .task-chip")) return;
+      if (ev.target.closest && ev.target.closest("#sel-bar, #tip, #sheet, #hud, #minigame, #btn-auras, button, .task-chip")) return;
       ev.stopPropagation();
       const hit = cellFromPoint(ev.clientX, ev.clientY);
       if (!hit) {
-        drag = { pointerId: ev.pointerId, startX: ev.clientX, startY: ev.clientY, active:false, isDeselect:true };
+        drag = { pointerId: ev.pointerId, startX: ev.clientX, startY: ev.clientY, startT: performance.now(), active:false, isDeselect:true };
         try { ev.currentTarget.setPointerCapture(ev.pointerId); } catch (e) {}
         ev.preventDefault();
         return;
@@ -2114,7 +2487,7 @@
         hoverCell = { r:hit.r, c:hit.c };
         renderBoard();
         renderSelBar();
-        drag = { pointerId: ev.pointerId, startX: ev.clientX, startY: ev.clientY, active:false, isAim:true };
+        drag = { pointerId: ev.pointerId, startX: ev.clientX, startY: ev.clientY, startT: performance.now(), active:false, isAim:true };
         try { ev.currentTarget.setPointerCapture(ev.pointerId); } catch (e) {}
         ev.preventDefault();
         return;
@@ -2122,10 +2495,15 @@
       const cell = state.grid[hit.r][hit.c];
       const role = defaultRole(cell);
       drag = {
-        pointerId: ev.pointerId, startX: ev.clientX, startY: ev.clientY,
+        pointerId: ev.pointerId, startX: ev.clientX, startY: ev.clientY, startT: performance.now(),
         active:false, from: occupied(cell) ? { r:hit.r, c:hit.c, role } : null,
-        isTap:true,
+        isTap:true, heldLong:false,
       };
+      if (drag.from) {
+        drag.holdTimer = setTimeout(() => {
+          if (drag && ev.pointerId === drag.pointerId) drag.heldLong = true;
+        }, DRAG_HOLD_MS);
+      }
       try { ev.currentTarget.setPointerCapture(ev.pointerId); } catch (e) {}
       ev.preventDefault();
     }
@@ -2143,10 +2521,14 @@
         return;
       }
       if (drag.isDeselect) return;
-      if (!drag.active && dist > 10 && drag.from) {
-        drag.active = true;
-        showGhost(drag.from);
-        renderBoard();
+      if (!drag.active && drag.from) {
+        const held = performance.now() - (drag.startT || 0);
+        const armed = (dist >= DRAG_THRESHOLD && (held >= DRAG_HOLD_MS || drag.heldLong)) || dist >= DRAG_FORCE_PX;
+        if (armed) {
+          drag.active = true;
+          showGhost(drag.from);
+          renderBoard();
+        }
       }
       if (drag.active) {
         moveGhost(ev.clientX, ev.clientY);
@@ -2160,6 +2542,7 @@
       ev.preventDefault();
       ev.stopPropagation();
       const d = drag;
+      if (d.holdTimer) clearTimeout(d.holdTimer);
       drag = null;
       hideGhost();
       try { ev.currentTarget.releasePointerCapture(ev.pointerId); } catch (e) {}
@@ -2195,6 +2578,7 @@
 
     function onPointerCancel(ev) {
       if (!drag || ev.pointerId !== drag.pointerId) return;
+      if (drag.holdTimer) clearTimeout(drag.holdTimer);
       drag = null;
       hideGhost();
       renderBoard();
@@ -2325,6 +2709,58 @@
       }
     }
 
+    function inspectContribs() {
+      if (holding || !selected) return null;
+      const bd = seatBreakdown(state.grid, selected.r, selected.c);
+      if (!bd) return null;
+      return bd.parts.filter(p => p.kind !== "base" && p.r != null && !(p.r===selected.r && p.c===selected.c));
+    }
+    function inspectEmitter() {
+      if (holding || !selected) return null;
+      const info = emitterInfo(selected.r, selected.c);
+      if (!info || info.kind === "mat") return null;
+      return info;
+    }
+    function renderAuraLines() {
+      const svg = $("aura-lines");
+      if (!svg) return;
+      const wrap = $("board-wrap");
+      if (!wrap) { svg.innerHTML = ""; return; }
+      const wr = wrap.getBoundingClientRect();
+      svg.setAttribute("viewBox", "0 0 " + Math.max(1, wr.width) + " " + Math.max(1, wr.height));
+      const contribs = inspectContribs();
+      if (!contribs || !contribs.length) { svg.innerHTML = ""; return; }
+      const toEl = boardEl() && boardEl().querySelector('.cell[data-r="'+selected.r+'"][data-c="'+selected.c+'"]');
+      if (!toEl) { svg.innerHTML = ""; return; }
+      const b = toEl.getBoundingClientRect();
+      const x2 = b.left + b.width/2 - wr.left;
+      const y2 = b.top + b.height/2 - wr.top;
+      let html = "";
+      for (const p of contribs) {
+        const fromEl = boardEl().querySelector('.cell[data-r="'+p.r+'"][data-c="'+p.c+'"]');
+        if (!fromEl) continue;
+        const a = fromEl.getBoundingClientRect();
+        const x1 = a.left + a.width/2 - wr.left;
+        const y1 = a.top + a.height/2 - wr.top;
+        html += '<line x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'" stroke="#c26a48" stroke-width="2.2" stroke-opacity="0.75" stroke-linecap="round"/>';
+        html += '<circle cx="'+x1.toFixed(1)+'" cy="'+y1.toFixed(1)+'" r="3.5" fill="#c26a48" fill-opacity="0.85"/>';
+      }
+      svg.innerHTML = html;
+    }
+    function syncAurasBtn() {
+      const btn = $("btn-auras");
+      if (!btn) return;
+      const on = !!state.showAuras;
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+      btn.textContent = on ? "Hide auras" : "Show auras";
+    }
+    function toggleAuras() {
+      state.showAuras = !state.showAuras;
+      syncAurasBtn();
+      renderBoard();
+      save();
+    }
+
     function renderBoard() {
       const board = boardEl();
       if (!board) return;
@@ -2333,6 +2769,17 @@
       const grid = prev || state.grid;
       const aim = holding ? previewAnchor() : null;
       const lift = drag && drag.active && drag.from ? drag.from : null;
+      const contribs = inspectContribs() || [];
+      const emitter = inspectEmitter();
+      const washSources = state.showAuras ? coverageSources(grid) : [];
+      const contribKey = {};
+      contribs.forEach(p => { contribKey[p.r+","+p.c] = p; });
+      const affectKey = {};
+      const boostKey = {};
+      if (emitter) {
+        (emitter.tiles || []).forEach(([rr,cc]) => { affectKey[rr+","+cc] = true; });
+        (emitter.hits || []).forEach(h => { boostKey[h.r+","+h.c] = h; });
+      }
       let html = "";
       for (let r=0;r<ROWS;r++) {
         for (let c=0;c<COLS;c++) {
@@ -2348,10 +2795,23 @@
             const hit = affectedTiles(origin.type, origin.r, origin.c).some(([ar,ac]) => ar===r && ac===c);
             if (hit && hl) cls.push(hl);
           }
+          if (contribKey[r+","+c]) cls.push("contrib");
+          if (affectKey[r+","+c]) cls.push("affected");
           if (drag && drag.active && hoverCell && hoverCell.r===r && hoverCell.c===c) cls.push("drop-ok");
           if (view.equip && view.equip.mishap) cls.push("broken");
           if (state.pests && (r+c) % 5 === 0) cls.push("pest-dots");
           let inner = "";
+          if (washSources.length) {
+            const seen = {};
+            for (const src of washSources) {
+              const hit = affectedTiles(src.type, src.r, src.c).some(([ar,ac]) => ar===r && ac===c);
+              if (!hit) continue;
+              const hl = hlClass(src.type);
+              if (!hl || seen[hl]) continue;
+              seen[hl] = true;
+              inner += '<div class="aura-wash '+hl+'"></div>';
+            }
+          }
           const eq = view.equip;
           if (eq) {
             if (eq.type === "mat") inner += '<div class="mat' + (eq.mishap==="torn"?" torn":"") + '"></div>';
@@ -2373,6 +2833,11 @@
             const mul = seatMultiplier(grid, r, c);
             if (mul) inner += '<div class="mult-tag' + (prev?" preview":"") + '">×' + mul.toFixed(2).replace(/0+$/,"").replace(/\.$/,"") + '</div>';
           }
+          const boost = boostKey[r+","+c];
+          if (boost && boost.factor) {
+            const pct = Math.round((boost.factor - 1) * 100);
+            inner += '<div class="boost-tag">' + (pct>=0?"+":"") + pct + '%</div>';
+          }
           if (cell.equip && cell.equip.mishap) {
             const lab = cell.equip.mishap==="torn" ? "Torn" : cell.equip.mishap==="blown" ? "Blown" : cell.equip.mishap==="wilted" ? "Wilted" : "Fix";
             inner += '<div class="fix-badge">' + lab + '</div>';
@@ -2381,6 +2846,8 @@
         }
       }
       board.innerHTML = html;
+      syncAurasBtn();
+      renderAuraLines();
     }
 
     function renderSelBar() {
@@ -2422,7 +2889,11 @@
           const def = trainerDef(tr);
           const need = xpNeeded(tr.level);
           const xpLine = tr.level >= 6 ? "Max level." : ("L" + tr.level + " · " + Math.floor(tr.xp) + "/" + need + " XP");
+          const bon = trainerBonuses(tr);
           info.innerHTML = "<strong>" + def.emoji + " " + def.short + "</strong>" + def.title + " · " + xpLine + " " + rangeText(tr.type);
+          const em = emitterInfo(selected.r, selected.c);
+          const hits = em && em.hits ? em.hits.length : 0;
+          info.innerHTML += '<ul class="breakdown"><li class="total"><span class="src">Aura ' + fmtFactor(bon.aura) + (hits ? (" · " + hits + " mat" + (hits===1?"":"s")) : " · no mats in range") + '</span></li></ul>';
           btnFlow.hidden = false;
           btnTrain.hidden = false;
           btnStore.textContent = "Bench";
@@ -2437,6 +2908,27 @@
           if (it.unsellable) {
             btnStore.hidden = true;
             $("sel-bar").querySelector('[data-act="sell"]').hidden = true;
+          }
+          if (cell.equip.type === "mat") {
+            const bd = seatBreakdown(state.grid, selected.r, selected.c);
+            if (bd) {
+              let rows = "";
+              for (const part of bd.parts) {
+                const cls = part.kind === "mishap" ? " mishap" : "";
+                rows += '<li class="'+cls.trim()+'"><span class="src">'+part.emoji+" "+part.name+'</span><span class="fac">'+fmtFactor(part.factor)+'</span></li>';
+              }
+              rows += '<li class="total"><span class="src">Total multiplier</span><span class="fac">'+fmtFactor(bd.total)+'</span></li>';
+              info.innerHTML += '<ul class="breakdown">' + rows + '</ul>';
+            }
+          } else {
+            const em = emitterInfo(selected.r, selected.c);
+            if (em && em.factor && em.kind === "equip") {
+              const hits = em.hits ? em.hits.length : 0;
+              const fac = (ITEMS[cell.equip.type] && ITEMS[cell.equip.type].shape === "global")
+                ? fmtFactor(em.factor) + " studio-wide"
+                : fmtFactor(em.factor) + (hits ? (" · " + hits + " mat" + (hits===1?"":"s") + " in range") : " · no mats in range yet");
+              info.innerHTML += '<ul class="breakdown"><li class="total"><span class="src">Boost ' + fac + '</span></li></ul>';
+            }
           }
         }
       }
@@ -2694,6 +3186,9 @@
         else endMinigame(true);
       });
 
+      const aurasBtn = $("btn-auras");
+      if (aurasBtn) aurasBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleAuras(); });
+
       const wrap = $("board-wrap");
       wrap.addEventListener("pointerdown", onPointerDown);
       wrap.addEventListener("pointermove", onPointerMove);
@@ -2734,7 +3229,7 @@
 
     function serialize() {
       return {
-        version: 2, cash: state.cash, totalEarned: state.totalEarned,
+        version: 3, cash: state.cash, totalEarned: state.totalEarned,
         grid: state.grid, bought: state.bought, upg: state.upg,
         roster: state.roster, nextTrainerId: state.nextTrainerId,
         trainerSlots: slotCap(), staff: state.staff, muted: state.muted,
@@ -2743,6 +3238,7 @@
         seated: state.seated, tasks: state.tasks, pests: state.pests, nextNoshow: state.nextNoshow,
         awards: state.awards, certs: state.certs, matsRolled: state.matsRolled || 0,
         classesRun: state.classesRun || 0, zenHighSince: state.zenHighSince || 0,
+        showAuras: !!state.showAuras,
       };
     }
     function save() {
@@ -2784,8 +3280,9 @@
       s.matsRolled = +raw.matsRolled || 0;
       s.classesRun = +raw.classesRun || 0;
       s.zenHighSince = +raw.zenHighSince || 0;
+      s.showAuras = !!raw.showAuras;
       s.roster.forEach(tr => { tr.certs = Array.isArray(tr.certs) ? tr.certs : []; tr.minigames = +tr.minigames || 0; });
-      s.version = 2;
+      s.version = 3;
       return s;
     }
     function applyOffline(fromTs) {
@@ -2879,7 +3376,7 @@
     }
 
     window.YogaMogul = {
-      version: 2, COLS, ROWS, ITEMS, TRAINERS, LOCKED_CREW, SHOP_ORDER, SAVE_KEY, CLASS_MS, MG_MS, CERTS, AWARDS, COMFORT_CAP,
+      version: 3, COLS, ROWS, ITEMS, TRAINERS, LOCKED_CREW, SHOP_ORDER, SAVE_KEY, CLASS_MS, MG_MS, MG_INTRO_MS, CERTS, AWARDS, COMFORT_CAP, DRAG_THRESHOLD, DRAG_HOLD_MS,
       getState: () => state,
       setState: (s) => { state = s; },
       getHolding: () => holding,
@@ -2901,6 +3398,8 @@
       completeTask, repairAt, hireStaff, spawnMishap, dueTasks,
       recruitTrainer, assignTrainer, benchTrainer,
       startMinigame, endMinigame, closeMinigame, onMinigamePointer,
+      createMinigameState, mgTickLogic, mgTapLogic, mgScorePct, simulateHumanPlay,
+      seatBreakdown, emitterInfo, coverageSources, fmtFactor, toggleAuras,
       renderAll, renderBoard, renderHeader, renderCrew,
       selectShop, selectStored, onCellTap, confirmPlace, deselectAll,
       hideTip, showTip, clearSelection() { deselectAll(); },
